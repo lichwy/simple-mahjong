@@ -487,7 +487,11 @@ function claimActionHighlightTiles(action: ActionOption): { handTiles: Map<Tile,
   const pondTiles = new Map<Tile, number>();
   const highlightAllMatchingHandTiles = action.type === "pon";
   if (action.type === "chi" || action.type === "pon" || action.type === "kan" || action.type === "concealedKan" || action.type === "addedKan") {
-    for (const tile of action.tiles ?? []) {
+    const handSourceTiles =
+      action.type === "chi" && action.tile
+        ? (action.tiles ?? []).filter((tile) => tile !== action.tile)
+        : (action.tiles ?? []);
+    for (const tile of handSourceTiles) {
       incrementTileCount(handTiles, tile);
     }
   }
@@ -598,17 +602,17 @@ function pawImageForAvatar(avatarKey: string): string {
 }
 
 function pawContactOffset(position: TablePosition, pawSize: number): { x: number; y: number } {
-  const baseX = pawSize * 0.13;
-  const baseY = pawSize * 0.15;
+  const lateralBias = pawSize * 0.01;
+  const forwardBias = pawSize * 0.11;
   switch (position) {
     case "south":
-      return { x: baseX, y: baseY };
+      return { x: lateralBias, y: -forwardBias };
     case "north":
-      return { x: -baseX, y: -baseY };
+      return { x: -lateralBias, y: forwardBias };
     case "east":
-      return { x: baseY, y: -baseX };
+      return { x: -forwardBias, y: -lateralBias };
     case "west":
-      return { x: -baseY, y: baseX };
+      return { x: forwardBias, y: lateralBias };
   }
 }
 
@@ -623,6 +627,21 @@ function pawTopLeftForCenter(
     x: centerX - pawSize / 2 - offset.x,
     y: centerY - pawSize / 2 - offset.y
   };
+}
+
+function pawCoverShift(position: TablePosition, tileWidth: number, tileHeight: number): { x: number; y: number } {
+  const horizontalShift = tileWidth * 0.5;
+  const verticalShift = tileHeight * 0.5;
+  switch (position) {
+    case "south":
+      return { x: 0, y: verticalShift };
+    case "north":
+      return { x: 0, y: -verticalShift };
+    case "east":
+      return { x: horizontalShift, y: 0 };
+    case "west":
+      return { x: -horizontalShift, y: 0 };
+  }
 }
 
 function playCatPawForLatestDiscard(state: PublicGameState): boolean {
@@ -647,8 +666,9 @@ function playCatPawForLatestDiscard(state: PublicGameState): boolean {
   const targetCenterX = targetRect.left - tableRect.left + targetRect.width / 2;
   const targetCenterY = targetRect.top - tableRect.top + targetRect.height / 2;
   const targetPos = pawTopLeftForCenter(targetCenterX, targetCenterY, fromPosition, pawSize);
-  const targetX = targetPos.x;
-  const targetY = targetPos.y;
+  const coverShift = pawCoverShift(fromPosition, targetRect.width, targetRect.height);
+  const targetX = targetPos.x + coverShift.x;
+  const targetY = targetPos.y + coverShift.y;
 
   let startX: number;
   let startY: number;
