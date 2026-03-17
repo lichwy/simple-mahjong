@@ -1106,6 +1106,9 @@ button:disabled {
 }
 
 .pond-zone.west .discard-tile-wrap .tile-face {
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
   transform: rotate(90deg);
   transform-origin: center;
   transition: scale 120ms ease;
@@ -1141,6 +1144,9 @@ button:disabled {
 }
 
 .pond-zone.east .discard-tile-wrap .tile-face {
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
   transform: rotate(-90deg);
   transform-origin: center;
   transition: scale 120ms ease;
