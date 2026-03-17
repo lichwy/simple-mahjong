@@ -485,7 +485,8 @@ function mergeTileCounts(target: Map<Tile, number>, source: Map<Tile, number>): 
 function claimActionHighlightTiles(action: ActionOption): { handTiles: Map<Tile, number>; pondTiles: Map<Tile, number> } {
   const handTiles = new Map<Tile, number>();
   const pondTiles = new Map<Tile, number>();
-  const highlightAllMatchingHandTiles = action.type === "pon";
+  const highlightAllMatchingHandTiles =
+    action.type === "kan" || action.type === "concealedKan" || action.type === "addedKan";
   if (action.type === "chi" || action.type === "pon" || action.type === "kan" || action.type === "concealedKan" || action.type === "addedKan") {
     const handSourceTiles =
       action.type === "chi" && action.tile
@@ -497,7 +498,11 @@ function claimActionHighlightTiles(action: ActionOption): { handTiles: Map<Tile,
   }
   if (action.type === "pon" || action.type === "kan") {
     if (action.tile) {
-      incrementTileCount(handTiles, action.tile);
+      if (action.type === "pon") {
+        handTiles.set(action.tile, 2);
+      } else {
+        incrementTileCount(handTiles, action.tile);
+      }
       incrementTileCount(pondTiles, action.tile);
     }
     if (action.targetTile) {

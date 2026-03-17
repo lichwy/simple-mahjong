@@ -424,7 +424,7 @@ button:disabled {
   bottom: 118px;
   left: 92px;
   width: 168px;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: stretch;
   gap: 6px;
 }
@@ -434,7 +434,7 @@ button:disabled {
   bottom: 118px;
   right: 92px;
   width: 168px;
-  justify-content: center;
+  justify-content: flex-end;
   align-items: stretch;
   gap: 6px;
 }
@@ -546,12 +546,12 @@ button:disabled {
 
 .meld-fixed.west {
   left: 26px;
-  bottom: 140px;
+  bottom: 26px;
 }
 
 .meld-fixed.east {
   right: 26px;
-  top: 140px;
+  top: 26px;
 }
 
 .meld-fixed .meld-strip {
@@ -597,14 +597,14 @@ button:disabled {
 }
 
 .player-info-fixed.west {
-  left: 16px;
-  top: 50%;
+  left: 54px;
+  top: 25%;
   transform: translateY(-50%);
 }
 
 .player-info-fixed.east {
-  right: 16px;
-  top: 50%;
+  right: 54px;
+  top: 75%;
   transform: translateY(-50%);
 }
 
@@ -968,6 +968,11 @@ button:disabled {
   transform: rotate(-90deg);
 }
 
+.seat-zone.west .tile-back-row.side,
+.seat-zone.west .revealed-hand-row.side {
+  margin-left: auto;
+}
+
 .seat-zone.west .seat-panel,
 .seat-zone.east .seat-panel {
   padding: 8px 10px;
@@ -1052,9 +1057,10 @@ button:disabled {
 }
 
 .pond-zone.north {
-  left: calc(50% - 95px);
+  right: calc(50% - 95px);
+  left: auto;
   bottom: calc(50% + 95px);
-  width: 190px;
+  width: 174px;
 }
 
 .pond-zone.north .discard-grid {
@@ -1064,7 +1070,7 @@ button:disabled {
   flex-wrap: wrap-reverse;
   justify-content: flex-start;
   gap: 1px;
-  width: 184px;
+  width: 174px;
 }
 
 .pond-zone.north .discard-tile-wrap {
@@ -1119,7 +1125,7 @@ button:disabled {
 }
 
 .pond-zone.east {
-  left: calc(50% + 95px);
+  left: calc(50% + 93px);
   top: calc(50% - 95px);
   height: 190px;
   width: auto;
@@ -2567,8 +2573,9 @@ button:disabled {
   }
 
   .pond-zone.east {
-    right: 174px;
-    width: 82px;
+    left: calc(50% + 93px);
+    right: auto;
+    width: auto;
   }
 
   .pond-zone.north {
@@ -2643,8 +2650,9 @@ button:disabled {
   }
 
   .pond-zone.east {
-    right: 116px;
-    width: 74px;
+    left: calc(50% + 93px);
+    right: auto;
+    width: auto;
   }
 
   .table-center {
