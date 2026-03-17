@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>日式麻將 LAN 對戰</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <main class="layout" id="app-layout">
+      <section class="panel panel-setup">
+        <h1>日式麻將 LAN 對戰</h1>
+        <p id="connection-status">連線中...</p>
+        <div class="form-grid">
+          <label>
+            玩家名稱
+            <input id="player-name" maxlength="12" placeholder="請輸入名稱" />
+          </label>
+          <label>
+            房間代碼
+            <input id="room-code" maxlength="8" placeholder="例如 ABC123" />
+          </label>
+        </div>
+        <div class="button-row">
+          <button id="create-room">建立房間</button>
+          <button id="join-room">加入房間</button>
+          <button id="request-state">重新同步</button>
+        </div>
+        <div class="button-row">
+          <button id="add-ai">加入 AI</button>
+          <button id="start-game">開始對局</button>
+          <button id="leave-room">退出房間</button>
+        </div>
+        <p class="hint">區網其他裝置可用此網址加入：<span id="lan-hint"></span></p>
+        <div id="room-summary" hidden>尚未加入房間。</div>
+        <p class="hint" hidden>房間分享連結：<span id="room-share">尚未建立</span></p>
+      </section>
+
+      <section class="panel panel-table">
+        <div id="table" class="mahjong-table">
+          <button id="table-leave-room" class="table-exit-button" type="button">退出房間</button>
+          <div id="player-info-north" class="player-info-fixed north"></div>
+          <div id="player-info-west" class="player-info-fixed west"></div>
+          <div id="player-info-east" class="player-info-fixed east"></div>
+          <div class="seat-zone north" data-position="north"></div>
+          <div class="seat-zone west" data-position="west"></div>
+          <div class="pond-zone north" data-pond-position="north"></div>
+          <div class="pond-zone west" data-pond-position="west"></div>
+          <div id="cat-paw-animation" class="cat-paw-animation" hidden>
+            <img id="cat-paw-img" src="/cat-paw.png" alt="貓手出牌動畫" />
+          </div>
+          <div id="table-center-button" class="table-center" role="button" tabindex="0" aria-label="牌桌中央按鈕">
+            <span id="center-score-south" class="center-score south"></span>
+            <span id="center-score-north" class="center-score north"></span>
+            <span id="center-score-west" class="center-score west"></span>
+            <span id="center-score-east" class="center-score east"></span>
+            <div id="center-summary" class="center-summary">等待開局</div>
+          </div>
+          <div class="pond-zone east" data-pond-position="east"></div>
+          <div class="seat-zone east" data-position="east"></div>
+          <div class="pond-zone south" data-pond-position="south"></div>
+          <div class="seat-zone south" data-position="south"></div>
+          <div id="south-player-info" class="south-player-info-fixed"></div>
+          <div id="meld-fixed-south" class="meld-fixed south"></div>
+          <div id="meld-fixed-north" class="meld-fixed north"></div>
+          <div id="meld-fixed-west" class="meld-fixed west"></div>
+          <div id="meld-fixed-east" class="meld-fixed east"></div>
+          <div class="south-player-bar">
+            <div id="south-player-open" class="south-player-box south-player-open"></div>
+            <div id="table-actions-fixed" class="table-actions-fixed"></div>
+            <div class="south-player-lower">
+              <div id="hand" class="hand-grid south-player-hand"></div>
+            </div>
+          </div>
+        </div>
+        <div class="control-strip">
+          <div class="info-strip">
+            <div id="draw-tile" class="draw-tile-box">尚未摸牌</div>
+            <div class="claim-panel">
+              <div id="claim-hint" class="claim-hint" hidden>目前沒有可碰牌提示。</div>
+              <div id="actions" class="button-wrap info-actions"></div>
+            </div>
+          </div>
+          <div id="read-hint" class="read-hint">對手牌況推測：目前資訊不足。</div>
+          <div id="ai-hint" class="ai-hint">AI 狀態：等待對局開始。</div>
+        </div>
+      </section>
+
+      <section class="panel panel-logs">
+        <h2>牌局紀錄</h2>
+        <div id="result-box">尚無結果。</div>
+        <ul id="logs" class="logs"></ul>
+      </section>
+    </main>
+
+    <div id="claim-flash" class="claim-flash" hidden>
+      <img id="claim-flash-avatar" class="claim-flash-avatar" src="" alt="" />
+      <div id="claim-flash-text" class="claim-flash-text">碰！</div>
+    </div>
+
+    <div id="result-overlay" class="result-overlay" hidden>
+      <div class="result-overlay-flash"></div>
+      <div class="result-overlay-rays"></div>
+      <div id="result-overlay-card" class="result-overlay-card">
+        <img id="result-overlay-cat" class="result-overlay-cat" src="/maneki-neko-win.png" alt="招財貓胡牌動畫" hidden />
+        <div id="result-overlay-badge" class="result-overlay-badge">胡牌</div>
+        <div id="result-overlay-title" class="result-overlay-title">本局結束</div>
+        <div id="result-overlay-subtitle" class="result-overlay-subtitle"></div>
+      </div>
+    </div>
+
+    <div id="score-dialog-backdrop" class="score-dialog-backdrop" hidden>
+      <section class="score-dialog" aria-modal="true" role="dialog" aria-labelledby="score-dialog-title">
+        <div class="score-dialog-header">
+          <div>
+            <h2 id="score-dialog-title">本局結算</h2>
+            <p id="score-dialog-summary" class="score-dialog-summary"></p>
+          </div>
+          <button id="score-dialog-close" class="score-dialog-close-btn" type="button" aria-label="關閉">&times;</button>
+        </div>
+        <div id="score-dialog-body" class="score-dialog-body"></div>
+      </section>
+    </div>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

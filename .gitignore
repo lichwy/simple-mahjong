@@ -1,0 +1,4 @@
+node_modules/
+dist/
+.venv-image/
+.DS_Store
