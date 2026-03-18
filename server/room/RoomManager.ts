@@ -237,6 +237,24 @@ export class RoomManager {
     if (!room.match) {
       throw new Error("請先建立牌桌。");
     }
+    // Allow restarting after a match is fully complete
+    if (room.match.phase === "matchComplete") {
+      room.match = new MatchEngine(
+        room.id,
+        room.seats
+          .filter((seat): seat is SeatAssignment => Boolean(seat))
+          .map((seat) => ({
+            seat: seat.seat,
+            id: seat.playerId,
+            name: seat.name,
+            isAi: seat.isAi,
+            connected: seat.connected
+          }))
+      );
+      room.match.setRoomSettings(room.settings);
+      this.broadcastRoomState(room);
+      this.broadcastGameState(room);
+    }
     if (room.match.phase !== "waiting") {
       return room;
     }

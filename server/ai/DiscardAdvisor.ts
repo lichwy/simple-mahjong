@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import type { PublicGameState, RecommendationInfo, Tile } from "../../shared/types.js";
 import { parseTile, tileToText } from "../../shared/tileUtils.js";
+import { analyzeDiscards, buildShantenReason, calculateShanten, shantenLabel } from "../game/ShantenCalculator.js";
 
 function countTile(tiles: Tile[], tile: Tile): number {
   return tiles.filter((item) => item === tile).length;
@@ -119,25 +120,58 @@ function localSuggest(state: PublicGameState): RecommendationInfo | null {
   if (!self || discardActions.length === 0) {
     return null;
   }
-  let bestTile = discardActions[0].tile!;
-  let bestReason = "目前無建議";
-  let bestScore = Number.NEGATIVE_INFINITY;
-  for (const action of discardActions) {
-    const shape = shapeScoreAfterDiscard(self.hand, action.tile!);
-    const safety = buildSafety(state, action.tile!);
-    const score = shape - safety.risk * 1.6;
-    if (score > bestScore) {
-      bestScore = score;
-      bestTile = action.tile!;
-      bestReason = localReason(shape, safety.risk, safety.reasons);
-    }
+
+  // Build visible tile pool for ukeire counting
+  const discardPool: Tile[] = [];
+  for (const player of state.players) {
+    for (const d of player.discards) discardPool.push(d.tile);
+    for (const meld of player.melds) for (const t of meld.tiles) discardPool.push(t);
   }
+
+  // Shanten-based analysis
+  const eligible = new Set(discardActions.map((a) => a.tile!));
+  const hand = self.hand;
+  const melds = self.melds;
+
+  const analyses = analyzeDiscards(hand, melds, discardPool).filter((a) =>
+    eligible.has(a.tile)
+  );
+
+  if (analyses.length === 0) {
+    return null;
+  }
+
+  // Blend shanten with safety
+  const best = analyses.reduce((prev, cur) => {
+    if (cur.shanten !== prev.shanten) return cur.shanten < prev.shanten ? cur : prev;
+    const safetyPrev = buildSafety(state, prev.tile).risk;
+    const safetyCur = buildSafety(state, cur.tile).risk;
+    const scorePrev = cur.ukeire - safetyPrev * 1.2;
+    const scoreCur = cur.ukeire - safetyCur * 1.2;
+    return scoreCur > scorePrev ? cur : prev;
+  });
+
+  const currentShanten = calculateShanten(hand, melds).shanten;
+  const shantenReason = buildShantenReason(best, currentShanten);
+
+  // Append safety note if relevant
+  const safety = buildSafety(state, best.tile);
+  const safetyNote =
+    safety.risk <= -2 ? "，多家現物安全" : safety.risk >= 3 ? "，注意放銃風險" : "";
+
+  const currentLabel = shantenLabel(currentShanten);
+  const status = `現在${currentLabel}`;
+
   return {
-    tile: bestTile,
-    reason: bestReason,
-    source: "本地AI",
-    strength: "中",
-    status: "大模型未啟用或不可用，已切換本地AI"
+    tile: best.tile,
+    reason: shantenReason + safetyNote,
+    source: "向聽計算",
+    strength: "高",
+    status,
+    shanten: best.shanten,
+    shantenBefore: currentShanten,
+    waitingTiles: best.waitingTiles,
+    ukeire: best.ukeire
   };
 }
 

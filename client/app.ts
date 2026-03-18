@@ -176,12 +176,19 @@ function updateHintPanel(): void {
     return;
   }
   if (hintRec) {
-    if (gameState.recommendation?.tile) {
-      const tile = gameState.recommendation.tile;
+    const rec = gameState.recommendation;
+    if (rec?.tile) {
+      const shantenBadge = rec.shantenBefore !== undefined
+        ? `<span style="font-size:10px;background:rgba(255,200,100,0.18);border:1px solid rgba(255,200,100,0.35);border-radius:4px;padding:1px 5px;margin-left:6px;color:#f7d98a;">${rec.shantenBefore === 0 ? "聽牌" : rec.shantenBefore === -1 ? "和了" : `${rec.shantenBefore}向聽`}</span>`
+        : "";
+      const waitingHtml = rec.waitingTiles && rec.waitingTiles.length > 0
+        ? `<div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:4px;">${rec.waitingTiles.slice(0, 9).map((t) => renderTileFace(t, "tiny")).join("")}${rec.waitingTiles.length > 9 ? `<span style="font-size:10px;opacity:0.7;align-self:center;">+${rec.waitingTiles.length - 9}</span>` : ""}</div>${rec.ukeire ? `<div style="font-size:10px;opacity:0.72;margin-top:2px;">進張 ${rec.ukeire} 張</div>` : ""}`
+        : "";
       hintRec.innerHTML = `
-        <div style="display:flex;flex-direction:column;gap:5px;">
-          <div>${renderTileFace(tile, "small")}</div>
-          <div style="font-size:11px;opacity:0.88;line-height:1.5;">${gameState.recommendation.reason}</div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div style="display:flex;align-items:center;">${renderTileFace(rec.tile, "small")}${shantenBadge}</div>
+          <div style="font-size:11px;opacity:0.88;line-height:1.5;">${rec.reason}</div>
+          ${waitingHtml}
         </div>`;
     } else {
       hintRec.textContent = "暫無建議";
@@ -439,6 +446,10 @@ function getCenterButtonAction():
   | null {
   if (gameState?.awaitingNextHand || gameState?.phase === "handComplete") {
     return { type: "continue_after_hand", roomId: gameState!.roomId };
+  }
+  // Match fully complete: host can restart a new match
+  if (gameState?.phase === "matchComplete" && room && room.hostId === playerId) {
+    return { type: "begin_hand", roomId: room.roomId };
   }
   if (room && room.tableReady && !room.started && room.hostId === playerId) {
     return { type: "begin_hand", roomId: room.roomId };
@@ -1456,6 +1467,15 @@ function renderSeatArea(
 }
 
 function renderCenterSummary(state: PublicGameState): string {
+  if (state.phase === "matchComplete") {
+    const amHost = room?.hostId === playerId;
+    return `
+      <div class="center-summary-item">
+        <span class="center-summary-label">東風戰結束</span>
+        <span class="center-summary-value">${amHost ? "按下再來一局" : "等待房主"}</span>
+      </div>
+    `;
+  }
   if (state.phase === "waiting") {
     const amHost = room?.hostId === playerId;
     return `
@@ -2267,6 +2287,7 @@ tableCenterButton?.addEventListener("keyup", (event) => {
 scoreDialogCloseButton?.addEventListener("click", () => {
   scoreDialogDismissed = true;
   hideScoreDialog();
+  handleCenterButtonRelease();
 });
 
 scoreDialogBackdrop?.addEventListener("click", (event) => {
@@ -2376,7 +2397,8 @@ function releaseAvatarsFromCenter(): void {
 }
 
 function initTiltEffect(): void {
-  const MAX_TILT = 18;
+  const MAX_TILT = 20;
+  const SENSITIVITY_PX = 24; // pixels from center to reach max tilt
 
   document.addEventListener("mousemove", (e: MouseEvent) => {
     const btn = (e.target as HTMLElement).closest<HTMLElement>(".tilt-btn");
@@ -2384,8 +2406,10 @@ function initTiltEffect(): void {
       return;
     }
     const rect = btn.getBoundingClientRect();
-    const dx = Math.max(-1, Math.min(1, (e.clientX - rect.left - rect.width / 2) / (rect.width / 2)));
-    const dy = Math.max(-1, Math.min(1, (e.clientY - rect.top - rect.height / 2) / (rect.height / 2)));
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dx = Math.max(-1, Math.min(1, (e.clientX - cx) / SENSITIVITY_PX));
+    const dy = Math.max(-1, Math.min(1, (e.clientY - cy) / SENSITIVITY_PX));
     const rx = (-dy * MAX_TILT).toFixed(2);
     const ry = (dx * MAX_TILT).toFixed(2);
     btn.style.transform = `perspective(280px) rotateX(${rx}deg) rotateY(${ry}deg)`;

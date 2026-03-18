@@ -144,6 +144,10 @@ export interface RecommendationInfo {
   source: string;
   strength: string;
   status: string;
+  shanten?: number;
+  shantenBefore?: number;
+  waitingTiles?: Tile[];
+  ukeire?: number;
 }
 
 export type AiClaimAggression = "conservative" | "balanced" | "aggressive";
