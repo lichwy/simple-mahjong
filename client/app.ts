@@ -86,6 +86,7 @@ let leavingRoomId: string | null = null;
 let lastAnimatedDiscardKey = "";
 let catPawCleanupTimer: number | null = null;
 let catPawRevealTimer: number | null = null;
+let catPawAnimationEndTime = 0;
 let dealIntroTimer: number | null = null;
 let lastGamePhase: string | null = null;
 let lastClaimSeq = 0;
@@ -800,6 +801,7 @@ function playCatPawForLatestDiscard(state: PublicGameState): boolean {
   catPawAnimation.classList.add(`from-${fromPosition}`);
   void catPawAnimation.offsetWidth;
   catPawAnimation.classList.add("play");
+  catPawAnimationEndTime = Date.now() + CAT_PAW_ANIMATION_MS;
   catPawRevealTimer = window.setTimeout(() => {
     target.classList.remove("discard-under-paw");
     target.classList.add("discard-revealed");
@@ -1809,10 +1811,10 @@ function renderGame(): void {
     const sortedTiles = sortTiles([...self.hand]);
     const drawnTile = state.viewerDrawTile;
     const suggestedTile = state.recommendation?.tile ?? null;
-    if (selfAutoPlayBox) {
+    if (selfAutoPlayBox && sortedTiles.length > 0) {
       const autoPlayButton = document.createElement("button");
       const autoPlayLabel = selfAutoPlayEnabled ? "取消托管" : "托管";
-      autoPlayButton.className = `table-options-button self-auto-play-btn ${selfAutoPlayEnabled ? "self-auto-play-active" : "self-auto-play-inactive"}`;
+      autoPlayButton.className = `table-options-button self-auto-play-btn tilt-btn ${selfAutoPlayEnabled ? "self-auto-play-active" : "self-auto-play-inactive"}`;
       autoPlayButton.textContent = autoPlayLabel;
       autoPlayButton.title = autoPlayLabel;
       autoPlayButton.dataset.glyphLength = String(autoPlayLabel.length);
@@ -1870,30 +1872,6 @@ function renderGame(): void {
       handBox.append(tileButton);
     }
 
-    const autoPlayAction =
-      selfAutoPlayEnabled &&
-      (
-        (state.phase === "awaitingDiscard" && state.currentTurnSeat === self.seat) ||
-        state.phase === "awaitingClaims"
-      )
-        ? chooseAutoPlayAction(state)
-        : null;
-    if (autoPlayAction) {
-      const actionKey =
-        autoPlayAction.type === "discard" && autoPlayAction.tile
-          ? autoPlayActionKey(state, autoPlayAction.tile)
-          : autoPlayClaimActionKey(state, autoPlayAction);
-      if (actionKey !== lastAutoPlayActionKey && selfAutoPlayTimer === null) {
-        selfAutoPlayTimer = window.setTimeout(() => {
-          selfAutoPlayTimer = null;
-          lastAutoPlayActionKey = actionKey;
-          send({ type: "action", roomId: state.roomId, action: autoPlayAction });
-        }, 260);
-      }
-    } else if (selfAutoPlayTimer !== null) {
-      window.clearTimeout(selfAutoPlayTimer);
-      selfAutoPlayTimer = null;
-    }
   }
 
   actionsBox.innerHTML = "";
@@ -1905,7 +1883,7 @@ function renderGame(): void {
   for (const action of nonDiscardActions) {
     const button = document.createElement("button");
     const glyph = actionGlyph(action);
-    button.className = `action-word-btn action-${action.type}`;
+    button.className = `action-word-btn action-${action.type} tilt-btn`;
     button.textContent = glyph;
     button.title = action.label;
     button.setAttribute("aria-label", action.label);
@@ -1956,6 +1934,37 @@ function renderGame(): void {
     insertHandGapSpacer(discardPosition, state);
   }
   playClaimFlash(state);
+
+  // Autoplay timer: placed AFTER playCatPawForLatestDiscard so catPawAnimationEndTime is up-to-date
+  if (self) {
+    const autoPlayAction =
+      selfAutoPlayEnabled &&
+      (
+        (state.phase === "awaitingDiscard" && state.currentTurnSeat === self.seat) ||
+        state.phase === "awaitingClaims"
+      )
+        ? chooseAutoPlayAction(state)
+        : null;
+    if (autoPlayAction) {
+      const actionKey =
+        autoPlayAction.type === "discard" && autoPlayAction.tile
+          ? autoPlayActionKey(state, autoPlayAction.tile)
+          : autoPlayClaimActionKey(state, autoPlayAction);
+      if (actionKey !== lastAutoPlayActionKey && selfAutoPlayTimer === null) {
+        const baseDelay = autoPlayAction.type !== "discard" ? 120 : 260;
+        const animRemaining = Math.max(0, catPawAnimationEndTime - Date.now());
+        const delay = Math.max(baseDelay, animRemaining + 80);
+        selfAutoPlayTimer = window.setTimeout(() => {
+          selfAutoPlayTimer = null;
+          lastAutoPlayActionKey = actionKey;
+          send({ type: "action", roomId: state.roomId, action: autoPlayAction });
+        }, delay);
+      }
+    } else if (selfAutoPlayTimer !== null) {
+      window.clearTimeout(selfAutoPlayTimer);
+      selfAutoPlayTimer = null;
+    }
+  }
   handleResultPresentation(state);
   if (shouldPlayDealIntro && table) {
     table.classList.remove("deal-intro");
@@ -2164,6 +2173,32 @@ leaveDialogBackdrop?.addEventListener("click", (event) => {
 updateViewMode();
 renderRoom();
 connect();
+initTiltEffect();
+
+function initTiltEffect(): void {
+  const MAX_TILT = 18;
+
+  document.addEventListener("mousemove", (e: MouseEvent) => {
+    const btn = (e.target as HTMLElement).closest<HTMLElement>(".tilt-btn");
+    if (!btn) {
+      return;
+    }
+    const rect = btn.getBoundingClientRect();
+    const dx = Math.max(-1, Math.min(1, (e.clientX - rect.left - rect.width / 2) / (rect.width / 2)));
+    const dy = Math.max(-1, Math.min(1, (e.clientY - rect.top - rect.height / 2) / (rect.height / 2)));
+    btn.style.setProperty("--tilt-x", `${(-dy * MAX_TILT).toFixed(2)}deg`);
+    btn.style.setProperty("--tilt-y", `${(dx * MAX_TILT).toFixed(2)}deg`);
+  });
+
+  document.addEventListener("mouseout", (e: MouseEvent) => {
+    const btn = (e.target as HTMLElement).closest<HTMLElement>(".tilt-btn");
+    const related = e.relatedTarget as HTMLElement | null;
+    if (btn && !btn.contains(related)) {
+      btn.style.setProperty("--tilt-x", "0deg");
+      btn.style.setProperty("--tilt-y", "0deg");
+    }
+  });
+}
 
 function leaveCurrentRoom(): void {
   if (!room) {

@@ -33,14 +33,14 @@
           </label>
         </div>
         <div class="button-row">
-          <button id="create-room">建立房間</button>
-          <button id="join-room">加入房間</button>
-          <button id="request-state">重新同步</button>
+          <button id="create-room" class="tilt-btn">建立房間</button>
+          <button id="join-room" class="tilt-btn">加入房間</button>
+          <button id="request-state" class="tilt-btn">重新同步</button>
         </div>
         <div class="button-row">
-          <button id="add-ai">加入 AI</button>
-          <button id="start-game">開始對局</button>
-          <button id="leave-room">退出房間</button>
+          <button id="add-ai" class="tilt-btn">加入 AI</button>
+          <button id="start-game" class="tilt-btn">開始對局</button>
+          <button id="leave-room" class="tilt-btn">退出房間</button>
         </div>
         <p class="hint">區網其他裝置可用此網址加入：<span id="lan-hint"></span></p>
         <div id="room-summary" hidden>尚未加入房間。</div>
@@ -80,7 +80,7 @@
             <span class="table-sakura s27">🌸</span>
             <span class="table-sakura s28">🌸</span>
           </div>
-          <button id="table-options-button" class="table-options-button" type="button" aria-expanded="false" aria-controls="table-options-panel">
+          <button id="table-options-button" class="table-options-button tilt-btn" type="button" aria-expanded="false" aria-controls="table-options-panel">
             <span class="table-options-button-label">選項</span>
           </button>
           <div id="table-options-panel" class="table-options-panel" hidden>
@@ -93,7 +93,7 @@
               </select>
             </label>
           </div>
-          <button id="table-leave-room" class="table-exit-button" type="button">
+          <button id="table-leave-room" class="table-exit-button tilt-btn" type="button">
             <span class="table-exit-button-label">退出</span>
           </button>
           <div id="player-info-north" class="player-info-fixed north"></div>
@@ -187,11 +187,11 @@
             <h2 id="leave-dialog-title">確認離桌</h2>
             <p class="score-dialog-summary">確定要離桌並退出房間嗎？</p>
           </div>
-          <button id="leave-dialog-close" class="score-dialog-close-btn" type="button" aria-label="關閉">&times;</button>
+          <button id="leave-dialog-close" class="score-dialog-close-btn tilt-btn" type="button" aria-label="關閉">&times;</button>
         </div>
         <div class="leave-dialog-actions">
-          <button id="leave-dialog-cancel" class="leave-dialog-cancel-btn" type="button">取消</button>
-          <button id="leave-dialog-confirm" class="leave-dialog-confirm-btn" type="button">離桌</button>
+          <button id="leave-dialog-cancel" class="leave-dialog-cancel-btn tilt-btn" type="button">取消</button>
+          <button id="leave-dialog-confirm" class="leave-dialog-confirm-btn tilt-btn" type="button">離桌</button>
         </div>
       </section>
     </div>
