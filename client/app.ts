@@ -81,6 +81,8 @@ let lastGamePhase: string | null = null;
 let lastClaimSeq = 0;
 let claimFlashTimer: number | null = null;
 const CAT_PAW_SIZE = 360;
+const CAT_PAW_ANIMATION_MS = 733;
+const CAT_PAW_REVEAL_MS = 520;
 let centerButtonPressed = false;
 let lastClickedTileIndex = -1;
 let animationReadyTime = Date.now() + 2000;
@@ -735,13 +737,13 @@ function playCatPawForLatestDiscard(state: PublicGameState): boolean {
     target.classList.remove("discard-under-paw");
     target.classList.add("discard-revealed");
     catPawRevealTimer = null;
-  }, 780);
+  }, CAT_PAW_REVEAL_MS);
   catPawCleanupTimer = window.setTimeout(() => {
     catPawAnimation.classList.remove("play", "from-south", "from-north", "from-east", "from-west");
     catPawAnimation.hidden = true;
     target.classList.remove("discard-revealed");
     catPawCleanupTimer = null;
-  }, 1100);
+  }, CAT_PAW_ANIMATION_MS);
   lastAnimatedDiscardKey = key;
   return true;
 }

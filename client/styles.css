@@ -540,8 +540,8 @@ button:disabled {
 }
 
 .meld-fixed.north {
-  top: 34px;
-  left: 20%;
+  top: 26px;
+  left: 26px;
 }
 
 .meld-fixed.west {
@@ -581,8 +581,8 @@ button:disabled {
 
 .south-player-info-fixed {
   position: absolute;
-  bottom: 80px;
-  left: 12%;
+  bottom: 72px;
+  left: calc(50% - 360px);
   z-index: 5;
 }
 
@@ -592,18 +592,20 @@ button:disabled {
 }
 
 .player-info-fixed.north {
-  top: 16px;
-  right: 16%;
+  top: 106px;
+  left: calc(50% + 250px);
+  right: auto;
+  transform: none;
 }
 
 .player-info-fixed.west {
-  left: 54px;
+  left: 88px;
   top: 25%;
   transform: translateY(-50%);
 }
 
 .player-info-fixed.east {
-  right: 54px;
+  right: 88px;
   top: 75%;
   transform: translateY(-50%);
 }
@@ -680,6 +682,7 @@ button:disabled {
   align-items: start;
   justify-content: center;
   margin: 0 auto;
+  transform: translateX(144px);
 }
 
 .north-player-box {
@@ -1706,11 +1709,11 @@ button:disabled {
 }
 
 .cat-paw-animation.play {
-  animation: catPawDrop 1100ms linear forwards;
+  animation: catPawDrop 733ms linear forwards;
 }
 
 .cat-paw-animation.play img {
-  animation: catPawPress 1100ms cubic-bezier(0.18, 0.82, 0.22, 1) forwards;
+  animation: catPawPress 733ms cubic-bezier(0.18, 0.82, 0.22, 1) forwards;
 }
 
 .cat-paw-animation.from-south {
