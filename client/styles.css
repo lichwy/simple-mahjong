@@ -1531,8 +1531,8 @@ button:disabled {
 
 .south-player-hand .tile-button .pin-pip,
 .south-player-hand .tile-face .pin-pip {
-  width: 9px;
-  height: 9px;
+  width: 11px;
+  height: 11px;
 }
 
 .south-player-hand .tile-button .honor-icon,
@@ -1637,6 +1637,10 @@ button:disabled {
   padding: 2px 1px;
 }
 
+.suit-pin {
+  padding: 3px 2px;
+}
+
 .pip-grid {
   width: 100%;
   height: 100%;
@@ -1651,10 +1655,44 @@ button:disabled {
   height: 10px;
   border-radius: 999px;
   background:
-    radial-gradient(circle at center, #0a9d34 0 18%, #ffffff 18% 33%, #0f8f2d 33% 54%, #ffffff 54% 70%, #157824 70% 100%);
+    radial-gradient(circle at center, #fbf4df 0 14%, #b12b30 14% 28%, #f9f0d6 28% 36%, #1c212d 36% 60%, #f6ead0 60% 68%, #b12b30 68% 84%, #4a2125 84% 100%);
   box-shadow:
-    inset 0 0 0 1px rgba(9, 71, 22, 0.3),
+    inset 0 0 0 1px rgba(35, 28, 21, 0.18),
     0 1px 1px rgba(0, 0, 0, 0.12);
+}
+
+.pin-rank-1 .pin-pip {
+  width: 16px;
+  height: 16px;
+  background:
+    radial-gradient(circle at center, #fbf6e5 0 12%, #b3212b 12% 25%, #f8edd1 25% 32%, #1c212d 32% 42%, #f8edd1 42% 49%, #b3212b 49% 62%, transparent 62% 100%),
+    conic-gradient(
+      from 0deg,
+      #20386f 0deg 20deg,
+      #f4ead3 20deg 28deg,
+      #20386f 28deg 56deg,
+      #f4ead3 56deg 64deg,
+      #20386f 64deg 92deg,
+      #f4ead3 92deg 100deg,
+      #20386f 100deg 128deg,
+      #f4ead3 128deg 136deg,
+      #20386f 136deg 164deg,
+      #f4ead3 164deg 172deg,
+      #20386f 172deg 200deg,
+      #f4ead3 200deg 208deg,
+      #20386f 208deg 236deg,
+      #f4ead3 236deg 244deg,
+      #20386f 244deg 272deg,
+      #f4ead3 272deg 280deg,
+      #20386f 280deg 308deg,
+      #f4ead3 308deg 316deg,
+      #20386f 316deg 344deg,
+      #f4ead3 344deg 352deg,
+      #20386f 352deg 360deg
+    );
+  box-shadow:
+    inset 0 0 0 1px rgba(29, 31, 53, 0.28),
+    0 1px 2px rgba(0, 0, 0, 0.16);
 }
 
 .bamboo-pip {
