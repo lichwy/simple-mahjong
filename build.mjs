@@ -34,6 +34,11 @@ await build({
 await copyFile(path.join(root, "client", "index.html"), path.join(publicDir, "index.html"));
 await copyFile(path.join(root, "client", "styles.css"), path.join(publicDir, "styles.css"));
 try {
+  await copyFile(path.join(root, "client", "imperial-seal-engraving.svg"), path.join(publicDir, "imperial-seal-engraving.svg"));
+} catch {
+  // Optional cosmetic asset; build should still succeed without it.
+}
+try {
   await copyFile(path.join(root, "client", "cat-paw-clear-transparent.png"), path.join(publicDir, "cat-paw.png"));
 } catch {
   try {

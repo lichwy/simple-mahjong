@@ -453,6 +453,173 @@ button:disabled {
   border-radius: 2px;
 }
 
+.table-engraving-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.table-engraving-overlay::before,
+.table-engraving-overlay::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 360px;
+  height: 360px;
+  translate: -50% -50%;
+  background: center / contain no-repeat url("/imperial-seal-engraving.svg");
+  pointer-events: none;
+}
+
+.table-engraving-overlay::before {
+  opacity: 0.1;
+  filter: brightness(0) saturate(0);
+}
+
+.table-engraving-overlay::after {
+  translate: calc(-50% + 1px) calc(-50% + 1px);
+  opacity: 0.06;
+  filter: brightness(2.2) saturate(0);
+}
+
+.table-petal-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.table-sakura {
+  position: absolute;
+  display: block;
+  font-size: 30px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 2px rgba(113, 51, 70, 0.18));
+  opacity: 0.92;
+  user-select: none;
+}
+
+.table-sakura.s1 {
+  top: 36px;
+  left: 54px;
+  rotate: -18deg;
+}
+
+.table-sakura.s2 {
+  top: 76px;
+  left: 148px;
+  font-size: 24px;
+  rotate: 14deg;
+}
+
+.table-sakura.s3 {
+  top: 42px;
+  right: 72px;
+  font-size: 28px;
+  rotate: 20deg;
+}
+
+.table-sakura.s4 {
+  top: 84px;
+  right: 164px;
+  font-size: 22px;
+  rotate: -12deg;
+}
+
+.table-sakura.s5 {
+  bottom: 42px;
+  left: 68px;
+  font-size: 28px;
+  rotate: 16deg;
+}
+
+.table-sakura.s6 {
+  bottom: 80px;
+  left: 172px;
+  font-size: 22px;
+  rotate: -20deg;
+}
+
+.table-sakura.s7 {
+  bottom: 52px;
+  right: 88px;
+  font-size: 30px;
+  rotate: -14deg;
+}
+
+.table-sakura.s8 {
+  bottom: 92px;
+  right: 188px;
+  font-size: 24px;
+  rotate: 18deg;
+}
+
+.table-sakura.s9 {
+  top: 30px;
+  left: 238px;
+  font-size: 18px;
+  rotate: 33deg;
+  opacity: 0.78;
+}
+
+.table-sakura.s10 {
+  top: 118px;
+  left: 40px;
+  font-size: 20px;
+  rotate: -29deg;
+  opacity: 0.74;
+}
+
+.table-sakura.s11 {
+  top: 22px;
+  right: 252px;
+  font-size: 19px;
+  rotate: -7deg;
+  opacity: 0.76;
+}
+
+.table-sakura.s12 {
+  top: 126px;
+  right: 92px;
+  font-size: 17px;
+  rotate: 27deg;
+  opacity: 0.72;
+}
+
+.table-sakura.s13 {
+  bottom: 28px;
+  left: 260px;
+  font-size: 18px;
+  rotate: -24deg;
+  opacity: 0.76;
+}
+
+.table-sakura.s14 {
+  bottom: 118px;
+  left: 112px;
+  font-size: 16px;
+  rotate: 11deg;
+  opacity: 0.7;
+}
+
+.table-sakura.s15 {
+  bottom: 34px;
+  right: 274px;
+  font-size: 20px;
+  rotate: 31deg;
+  opacity: 0.78;
+}
+
+.table-sakura.s16 {
+  bottom: 126px;
+  right: 126px;
+  font-size: 17px;
+  rotate: -17deg;
+  opacity: 0.72;
+}
+
 .seat-zone {
   position: absolute;
   display: flex;
@@ -1817,26 +1984,26 @@ button:disabled {
     transform: translate3d(
       calc(var(--paw-start-x) + (var(--paw-end-x) - var(--paw-start-x)) * 0.28),
       calc(var(--paw-start-y) + (var(--paw-end-y) - var(--paw-start-y)) * 0.28)
-    , 0) scale(0.9);
+    , 0) scale(0.95);
   }
   55% {
     opacity: 1;
     transform: translate3d(
       calc(var(--paw-start-x) + (var(--paw-end-x) - var(--paw-start-x)) * 0.72),
       calc(var(--paw-start-y) + (var(--paw-end-y) - var(--paw-start-y)) * 0.72)
-    , 0) scale(0.75);
+    , 0) scale(0.87);
   }
   70% {
     opacity: 1;
-    transform: translate3d(var(--paw-end-x), var(--paw-end-y), 0) scale(0.66);
+    transform: translate3d(var(--paw-end-x), var(--paw-end-y), 0) scale(0.83);
   }
   82% {
     opacity: 1;
-    transform: translate3d(var(--paw-end-x), var(--paw-end-y), 0) scale(0.66);
+    transform: translate3d(var(--paw-end-x), var(--paw-end-y), 0) scale(0.83);
   }
   100% {
     opacity: 0;
-    transform: translate3d(var(--paw-exit-x), var(--paw-exit-y), 0) scale(0.62);
+    transform: translate3d(var(--paw-exit-x), var(--paw-exit-y), 0) scale(0.81);
   }
 }
 
