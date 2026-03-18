@@ -61,6 +61,10 @@ wss.on("connection", (socket) => {
           roomManager.addAi(playerId, message.roomId);
           return;
         }
+        case "update_room_settings": {
+          roomManager.updateRoomSettings(playerId, message.roomId, message.settings);
+          return;
+        }
         case "start_game": {
           roomManager.startGame(playerId, message.roomId);
           return;

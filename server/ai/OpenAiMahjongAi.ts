@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import type { ActionOption, PlayerRuntimeState, Tile, Wind } from "../../shared/types.js";
+import type { ActionOption, AiClaimAggression, PlayerRuntimeState, Tile, Wind } from "../../shared/types.js";
 import { sortTiles, tileToText } from "../../shared/tileUtils.js";
 import { RuleBasedAi } from "./RuleBasedAi.js";
 
@@ -60,7 +60,8 @@ export class OpenAiMahjongAi extends RuleBasedAi {
     player: PlayerRuntimeState,
     actions: ActionOption[],
     roundWind: Wind,
-    liveWallTilesRemaining: number
+    liveWallTilesRemaining: number,
+    aggression: AiClaimAggression = "balanced"
   ): Promise<ActionOption> {
     if (!this.client) {
       this.rememberDecision(player.id, {
@@ -68,10 +69,14 @@ export class OpenAiMahjongAi extends RuleBasedAi {
         strength: "中",
         summary: "未設定 OpenAI API，改用規則 AI 後備決策"
       });
-      return super.chooseAction(player, actions, roundWind, liveWallTilesRemaining);
+      return super.chooseAction(player, actions, roundWind, liveWallTilesRemaining, aggression);
     }
 
-    const fallback = await super.chooseAction(player, actions, roundWind, liveWallTilesRemaining);
+    const fallback = await super.chooseAction(player, actions, roundWind, liveWallTilesRemaining, aggression);
+    const aggressionText =
+      aggression === "conservative" ? "保守"
+      : aggression === "aggressive" ? "激進"
+      : "標準";
     try {
       const options = actions.map((action, index) => `${index}: ${formatAction(action)}`).join("\n");
       const hand = sortTiles(player.hand).map(tileToText).join("、");
@@ -89,6 +94,7 @@ export class OpenAiMahjongAi extends RuleBasedAi {
           {
             role: "user",
             content: [
+              `副露積極度：${aggressionText}`,
               `場風：${roundWind === "east" ? "東" : "南"}`,
               `剩餘牌山：${liveWallTilesRemaining}`,
               `你的手牌：${hand}`,
@@ -96,7 +102,7 @@ export class OpenAiMahjongAi extends RuleBasedAi {
               `你的河：${discards}`,
               "合法動作：",
               options,
-              `如果有和牌就選和牌。若無和牌，只有在副露能明顯幫助你自己更快和牌或提高打點時才吃碰槓；不要做看起來像在幫別家做牌的選擇。`,
+              `如果有和牌就選和牌。若無和牌，只有在符合目前副露積極度設定，且副露能明顯幫助你自己更快和牌或提高打點時才吃碰槓；不要做看起來像在幫別家做牌的選擇。`,
               `請只回傳 JSON。`
             ].join("\n")
           }

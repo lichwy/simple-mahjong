@@ -1,4 +1,4 @@
-import type { ActionOption, PlayerRuntimeState, Tile, Wind } from "../../shared/types.js";
+import type { ActionOption, AiClaimAggression, PlayerRuntimeState, Tile, Wind } from "../../shared/types.js";
 import { isHonor, isSimple, isTerminal, parseTile } from "../../shared/tileUtils.js";
 
 interface AiDecisionInfo {
@@ -177,20 +177,29 @@ function opennessPenalty(action: ActionOption): number {
   }
 }
 
-function claimThreshold(action: ActionOption): number {
+function claimThreshold(action: ActionOption, aggression: AiClaimAggression): number {
+  const aggressionOffset =
+    aggression === "conservative" ? 2
+    : aggression === "aggressive" ? -2
+    : 0;
   switch (action.type) {
     case "chi":
-      return 4;
+      return Math.max(0, 4 + aggressionOffset);
     case "pon":
-      return 1;
+      return Math.max(-2, 1 + aggressionOffset);
     case "kan":
-      return 2;
+      return Math.max(-1, 2 + aggressionOffset);
     default:
       return 0;
   }
 }
 
-function chooseClaimOrKan(player: PlayerRuntimeState, actions: ActionOption[], roundWind: Wind): ActionOption {
+function chooseClaimOrKan(
+  player: PlayerRuntimeState,
+  actions: ActionOption[],
+  roundWind: Wind,
+  aggression: AiClaimAggression
+): ActionOption {
   const pass = actions.find((action) => action.type === "pass");
   const candidates = actions.filter((action) => action.type !== "pass");
   if (candidates.length === 0) {
@@ -208,7 +217,7 @@ function chooseClaimOrKan(player: PlayerRuntimeState, actions: ActionOption[], r
       best = action;
     }
   }
-  if (best.type !== "pass" && bestGain < claimThreshold(best)) {
+  if (best.type !== "pass" && bestGain < claimThreshold(best, aggression)) {
     return pass ?? best;
   }
   return best;
@@ -228,8 +237,9 @@ export class RuleBasedAi {
   async chooseAction(
     player: PlayerRuntimeState,
     actions: ActionOption[],
-    _roundWind: Wind,
-    _liveWallTilesRemaining: number
+    roundWind: Wind,
+    _liveWallTilesRemaining: number,
+    aggression: AiClaimAggression = "balanced"
   ): Promise<ActionOption> {
     const ron = actions.find((action) => action.type === "ron");
     if (ron) {
@@ -250,11 +260,18 @@ export class RuleBasedAi {
 
     const pass = actions.find((action) => action.type === "pass");
     if (pass && actions.every((action) => action.type !== "discard")) {
-      const chosen = chooseClaimOrKan(player, actions, _roundWind);
+      const chosen = chooseClaimOrKan(player, actions, roundWind, aggression);
+      const aggressionText =
+        aggression === "conservative" ? "保守"
+        : aggression === "aggressive" ? "激進"
+        : "標準";
       this.rememberDecision(player.id, {
         mode: "規則AI",
         strength: "中",
-        summary: chosen.type === "pass" ? "副露收益不夠高，維持手牌獨立發展並選擇略過" : `只在明顯提升自己牌型時副露 ${chosen.label}`
+        summary:
+          chosen.type === "pass"
+            ? `副露積極度設為${aggressionText}，目前收益不夠高，維持手牌獨立發展並選擇略過`
+            : `副露積極度設為${aggressionText}，判斷 ${chosen.label} 能明顯提升自己牌型`
       });
       return chosen;
     }

@@ -1,5 +1,6 @@
 import type {
   ActionOption,
+  AiClaimAggression,
   Meld,
   PublicGameState,
   RoomSummary,
@@ -10,12 +11,16 @@ import { parseTile, sortTiles, tileToText } from "../shared/tileUtils.js";
 
 const playerNameInput = document.querySelector<HTMLInputElement>("#player-name");
 const roomCodeInput = document.querySelector<HTMLInputElement>("#room-code");
+const aiClaimAggressionSelect = document.querySelector<HTMLSelectElement>("#ai-claim-aggression");
+const tableAiClaimAggressionSelect = document.querySelector<HTMLSelectElement>("#table-ai-claim-aggression");
 const appLayout = document.querySelector<HTMLElement>("#app-layout");
 const connectionStatus = document.querySelector<HTMLElement>("#connection-status");
 const roomSummaryBox = document.querySelector<HTMLElement>("#room-summary");
 const roomShareBox = document.querySelector<HTMLElement>("#room-share");
 const table = document.querySelector<HTMLElement>("#table");
 const tableCenterButton = document.querySelector<HTMLElement>("#table-center-button");
+const tableOptionsButton = document.querySelector<HTMLButtonElement>("#table-options-button");
+const tableOptionsPanel = document.querySelector<HTMLElement>("#table-options-panel");
 const handBox = document.querySelector<HTMLElement>("#hand");
 const drawTileBox = document.querySelector<HTMLElement>("#draw-tile");
 const claimHintBox = document.querySelector<HTMLElement>("#claim-hint");
@@ -54,6 +59,7 @@ const resultOverlaySubtitle = document.querySelector<HTMLElement>("#result-overl
 const scoreDialogBackdrop = document.querySelector<HTMLElement>("#score-dialog-backdrop");
 const scoreDialogSummary = document.querySelector<HTMLElement>("#score-dialog-summary");
 const scoreDialogBody = document.querySelector<HTMLElement>("#score-dialog-body");
+const leaveDialogBackdrop = document.querySelector<HTMLElement>("#leave-dialog-backdrop");
 
 const createRoomButton = document.querySelector<HTMLButtonElement>("#create-room");
 const joinRoomButton = document.querySelector<HTMLButtonElement>("#join-room");
@@ -63,6 +69,9 @@ const startGameButton = document.querySelector<HTMLButtonElement>("#start-game")
 const leaveRoomButton = document.querySelector<HTMLButtonElement>("#leave-room");
 const tableLeaveRoomButton = document.querySelector<HTMLButtonElement>("#table-leave-room");
 const scoreDialogCloseButton = document.querySelector<HTMLButtonElement>("#score-dialog-close");
+const leaveDialogCloseButton = document.querySelector<HTMLButtonElement>("#leave-dialog-close");
+const leaveDialogCancelButton = document.querySelector<HTMLButtonElement>("#leave-dialog-cancel");
+const leaveDialogConfirmButton = document.querySelector<HTMLButtonElement>("#leave-dialog-confirm");
 
 let socket: WebSocket | null = null;
 let room: RoomSummary | null = null;
@@ -87,6 +96,36 @@ let centerButtonPressed = false;
 let lastClickedTileIndex = -1;
 let animationReadyTime = Date.now() + 2000;
 let scoreDialogDismissed = false;
+
+function setTableOptionsOpen(open: boolean): void {
+  if (!tableOptionsButton || !tableOptionsPanel) {
+    return;
+  }
+  tableOptionsButton.setAttribute("aria-expanded", open ? "true" : "false");
+  tableOptionsPanel.hidden = !open;
+}
+
+function claimAggressionLabel(value: AiClaimAggression): string {
+  switch (value) {
+    case "conservative":
+      return "保守";
+    case "aggressive":
+      return "激進";
+    default:
+      return "標準";
+  }
+}
+
+function syncAiClaimAggressionControls(value: AiClaimAggression, disabled: boolean): void {
+  if (aiClaimAggressionSelect) {
+    aiClaimAggressionSelect.value = value;
+    aiClaimAggressionSelect.disabled = disabled;
+  }
+  if (tableAiClaimAggressionSelect) {
+    tableAiClaimAggressionSelect.value = value;
+    tableAiClaimAggressionSelect.disabled = disabled;
+  }
+}
 
 function ensureTableSkeleton(): void {
   if (!table) {
@@ -177,6 +216,7 @@ function clearCurrentRoomState(message?: string): void {
   if (roomCodeInput) {
     roomCodeInput.value = "";
   }
+  syncAiClaimAggressionControls("balanced", true);
   if (roomShareBox) {
     roomShareBox.textContent = "尚未建立";
     roomShareBox.parentElement?.setAttribute("hidden", "");
@@ -225,6 +265,7 @@ function clearCurrentRoomState(message?: string): void {
   if (message) {
     connectionStatus!.textContent = message;
   }
+  setTableOptionsOpen(false);
 }
 
 function updateViewMode(): void {
@@ -325,6 +366,18 @@ function hideScoreDialog(): void {
   }
 }
 
+function openLeaveDialog(): void {
+  if (leaveDialogBackdrop) {
+    leaveDialogBackdrop.hidden = false;
+  }
+}
+
+function hideLeaveDialog(): void {
+  if (leaveDialogBackdrop) {
+    leaveDialogBackdrop.hidden = true;
+  }
+}
+
 function connect(): void {
   const protocol = location.protocol === "https:" ? "wss" : "ws";
   socket = new WebSocket(`${protocol}://${location.host}`);
@@ -415,6 +468,7 @@ function renderRoom(): void {
     addAiButton!.disabled = true;
     startGameButton!.disabled = true;
     leaveRoomButton!.disabled = true;
+    syncAiClaimAggressionControls("balanced", true);
     centerSummary!.innerHTML = buildIdleCenterSummary();
     return;
   }
@@ -432,7 +486,7 @@ function renderRoom(): void {
       return `座位 ${seat.seat + 1}：${seat.name}${hostMark}${aiMark}（${online}）`;
     })
     .join("<br />");
-  roomSummaryBox.innerHTML = `房間代碼：<strong>${currentRoom.roomId}</strong><br />${seatLines}`;
+  roomSummaryBox.innerHTML = `房間代碼：<strong>${currentRoom.roomId}</strong><br />電腦吃碰積極度：${claimAggressionLabel(currentRoom.settings.aiClaimAggression)}<br />${seatLines}`;
   if (roomShareBox) {
     const shareUrl = `${window.location.origin}/?room=${currentRoom.roomId}`;
     roomShareBox.innerHTML = `<a href="${shareUrl}">${shareUrl}</a>`;
@@ -442,6 +496,7 @@ function renderRoom(): void {
   addAiButton!.disabled = !amHost || currentRoom.tableReady;
   startGameButton!.disabled = !amHost || currentRoom.tableReady;
   leaveRoomButton!.disabled = false;
+  syncAiClaimAggressionControls(currentRoom.settings.aiClaimAggression, false);
   if (!gameState) {
     centerSummary!.innerHTML = buildIdleCenterSummary();
   }
@@ -1893,6 +1948,41 @@ addAiButton?.addEventListener("click", () => {
   send({ type: "add_ai", roomId: room.roomId });
 });
 
+function submitAiClaimAggressionSetting(source: HTMLSelectElement): void {
+  if (!room || room.hostId !== playerId) {
+    return;
+  }
+  send({
+    type: "update_room_settings",
+    roomId: room.roomId,
+    settings: {
+      aiClaimAggression: source.value as AiClaimAggression
+    }
+  });
+}
+
+aiClaimAggressionSelect?.addEventListener("change", () => {
+  submitAiClaimAggressionSetting(aiClaimAggressionSelect);
+});
+
+tableAiClaimAggressionSelect?.addEventListener("change", () => {
+  submitAiClaimAggressionSetting(tableAiClaimAggressionSelect);
+});
+
+tableOptionsButton?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  const currentlyOpen = tableOptionsButton.getAttribute("aria-expanded") === "true";
+  setTableOptionsOpen(!currentlyOpen);
+});
+
+tableOptionsPanel?.addEventListener("click", (event) => {
+  event.stopPropagation();
+});
+
+document.addEventListener("click", () => {
+  setTableOptionsOpen(false);
+});
+
 startGameButton?.addEventListener("click", () => {
   if (!room) {
     return;
@@ -1901,11 +1991,11 @@ startGameButton?.addEventListener("click", () => {
 });
 
 leaveRoomButton?.addEventListener("click", () => {
-  leaveCurrentRoom();
+  openLeaveDialog();
 });
 
 tableLeaveRoomButton?.addEventListener("click", () => {
-  leaveCurrentRoom();
+  openLeaveDialog();
 });
 
 tableCenterButton?.addEventListener("pointerdown", (event) => {
@@ -1957,6 +2047,24 @@ scoreDialogBackdrop?.addEventListener("click", (event) => {
   }
 });
 
+leaveDialogCloseButton?.addEventListener("click", () => {
+  hideLeaveDialog();
+});
+
+leaveDialogCancelButton?.addEventListener("click", () => {
+  hideLeaveDialog();
+});
+
+leaveDialogConfirmButton?.addEventListener("click", () => {
+  leaveCurrentRoom();
+});
+
+leaveDialogBackdrop?.addEventListener("click", (event) => {
+  if (event.target === leaveDialogBackdrop) {
+    hideLeaveDialog();
+  }
+});
+
 updateViewMode();
 renderRoom();
 connect();
@@ -1968,5 +2076,6 @@ function leaveCurrentRoom(): void {
   leavingRoomId = room.roomId;
   hideResultOverlay();
   hideScoreDialog();
+  hideLeaveDialog();
   send({ type: "leave_room", roomId: room.roomId });
 }

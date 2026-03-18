@@ -59,4 +59,33 @@ describe("RuleBasedAi", () => {
 
     expect(chosen.type).toBe("pass");
   });
+
+  it("可依設定動態調整吃碰積極度", async () => {
+    const ai = new RuleBasedAi();
+    const player = {
+      seat: 1,
+      id: "ai-3",
+      name: "電腦三號",
+      score: 25000,
+      hand: ["2m", "3m", "4m", "6m", "7m", "8m", "2p", "3p", "4p", "5s", "6s", "7s", "9s"] as const,
+      melds: [],
+      discards: [],
+      seatWind: "south" as const,
+      isAi: true,
+      connected: true,
+      riichiDeclared: false,
+      riichiAccepted: false,
+      ippatsu: false
+    };
+    const actions = [
+      { actorSeat: 1, type: "pon" as const, tile: "9s" as const, fromSeat: 3, label: "碰 九索" },
+      { actorSeat: 1, type: "pass" as const, tile: "9s" as const, fromSeat: 3, label: "略過" }
+    ];
+
+    const conservative = await ai.chooseAction(player, actions, "east", 46, "conservative");
+    const aggressive = await ai.chooseAction(player, actions, "east", 46, "aggressive");
+
+    expect(conservative.type).toBe("pass");
+    expect(aggressive.type).toBe("pon");
+  });
 });

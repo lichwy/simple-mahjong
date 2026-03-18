@@ -146,6 +146,12 @@ export interface RecommendationInfo {
   status: string;
 }
 
+export type AiClaimAggression = "conservative" | "balanced" | "aggressive";
+
+export interface RoomSettings {
+  aiClaimAggression: AiClaimAggression;
+}
+
 export interface PublicGameState {
   roomId: string;
   phase: GamePhase;
@@ -185,6 +191,7 @@ export interface RoomSummary {
   hostId: string;
   tableReady: boolean;
   started: boolean;
+  settings: RoomSettings;
   seats: LobbySeat[];
 }
 
@@ -219,6 +226,12 @@ export interface ClientAddAiMessage {
   roomId: string;
 }
 
+export interface ClientUpdateRoomSettingsMessage {
+  type: "update_room_settings";
+  roomId: string;
+  settings: Partial<RoomSettings>;
+}
+
 export interface ClientActionMessage {
   type: "action";
   roomId: string;
@@ -247,6 +260,7 @@ export type ClientMessage =
   | ClientStartGameMessage
   | ClientBeginHandMessage
   | ClientAddAiMessage
+  | ClientUpdateRoomSettingsMessage
   | ClientActionMessage
   | ClientRequestStateMessage
   | ClientContinueAfterHandMessage

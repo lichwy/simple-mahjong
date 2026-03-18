@@ -23,6 +23,14 @@
             房間代碼
             <input id="room-code" maxlength="8" placeholder="例如 ABC123" />
           </label>
+          <label>
+            電腦吃碰積極度
+            <select id="ai-claim-aggression">
+              <option value="conservative">保守</option>
+              <option value="balanced" selected>標準</option>
+              <option value="aggressive">激進</option>
+            </select>
+          </label>
         </div>
         <div class="button-row">
           <button id="create-room">建立房間</button>
@@ -41,6 +49,19 @@
 
       <section class="panel panel-table">
         <div id="table" class="mahjong-table">
+          <button id="table-options-button" class="table-options-button" type="button" aria-expanded="false" aria-controls="table-options-panel">
+            <span class="table-options-button-label">選項</span>
+          </button>
+          <div id="table-options-panel" class="table-options-panel" hidden>
+            <label class="table-setting-label">
+              電腦吃碰積極度
+              <select id="table-ai-claim-aggression">
+                <option value="conservative">保守</option>
+                <option value="balanced" selected>標準</option>
+                <option value="aggressive">激進</option>
+              </select>
+            </label>
+          </div>
           <button id="table-leave-room" class="table-exit-button" type="button">
             <span class="table-exit-button-label">離桌</span>
           </button>
@@ -124,6 +145,22 @@
           <button id="score-dialog-close" class="score-dialog-close-btn" type="button" aria-label="關閉">&times;</button>
         </div>
         <div id="score-dialog-body" class="score-dialog-body"></div>
+      </section>
+    </div>
+
+    <div id="leave-dialog-backdrop" class="score-dialog-backdrop" hidden>
+      <section class="leave-dialog" aria-modal="true" role="dialog" aria-labelledby="leave-dialog-title">
+        <div class="score-dialog-header">
+          <div>
+            <h2 id="leave-dialog-title">確認離桌</h2>
+            <p class="score-dialog-summary">確定要離桌並退出房間嗎？</p>
+          </div>
+          <button id="leave-dialog-close" class="score-dialog-close-btn" type="button" aria-label="關閉">&times;</button>
+        </div>
+        <div class="leave-dialog-actions">
+          <button id="leave-dialog-cancel" class="leave-dialog-cancel-btn" type="button">取消</button>
+          <button id="leave-dialog-confirm" class="leave-dialog-confirm-btn" type="button">離桌</button>
+        </div>
       </section>
     </div>
 

@@ -1,5 +1,6 @@
 import type {
   ActionOption,
+  AiClaimAggression,
   AiInsight,
   DiscardTile,
   GamePhase,
@@ -8,6 +9,7 @@ import type {
   Meld,
   PlayerRuntimeState,
   PublicGameState,
+  RoomSettings,
   RoomSummary,
   RyukyokuResult,
   Tile,
@@ -97,6 +99,7 @@ export class MatchEngine {
   logs: string[] = [];
   aiInsights = new Map<number, AiInsight>();
   private nextHandReadySeats = new Set<number>();
+  private roomSettings: RoomSettings = { aiClaimAggression: "balanced" };
 
   private requiresContinueConfirmation(player: PlayerRuntimeState): boolean {
     return !player.isAi && player.connected;
@@ -135,6 +138,7 @@ export class MatchEngine {
       hostId: this.players[0]?.id ?? "",
       tableReady: true,
       started: this.phase !== "waiting",
+      settings: this.roomSettings,
       seats: this.players.map((player): LobbySeat => ({
         seat: player.seat,
         playerId: player.id,
@@ -144,6 +148,10 @@ export class MatchEngine {
         occupied: true
       }))
     };
+  }
+
+  setRoomSettings(settings: RoomSettings): void {
+    this.roomSettings = settings;
   }
 
   startMatch(): void {
@@ -671,7 +679,7 @@ export class MatchEngine {
     }
   }
 
-  async runAiStep(ai: RuleBasedAi): Promise<boolean> {
+  async runAiStep(ai: RuleBasedAi, claimAggression: AiClaimAggression = "balanced"): Promise<boolean> {
     if (this.phase === "handComplete" || this.phase === "matchComplete") {
       return false;
     }
@@ -685,7 +693,7 @@ export class MatchEngine {
         if (!player.isAi && player.connected) {
           continue;
         }
-        const chosen = await ai.chooseAction(player, actions, this.roundWind, this.wall?.liveCount ?? 0);
+        const chosen = await ai.chooseAction(player, actions, this.roundWind, this.wall?.liveCount ?? 0, claimAggression);
         const insight = ai.getDecisionInfo(player.id);
         if (insight) {
           this.aiInsights.set(player.seat, { seat: player.seat, ...insight });
@@ -705,7 +713,7 @@ export class MatchEngine {
     if (actions.length === 0) {
       return false;
     }
-    const chosen = await ai.chooseAction(player, actions, this.roundWind, this.wall?.liveCount ?? 0);
+    const chosen = await ai.chooseAction(player, actions, this.roundWind, this.wall?.liveCount ?? 0, claimAggression);
     const insight = ai.getDecisionInfo(player.id);
     if (insight) {
       this.aiInsights.set(player.seat, { seat: player.seat, ...insight });

@@ -35,7 +35,7 @@ describe("RoomManager", () => {
   it("進行中的牌局退出後應由 AI 接手且可再建新房間", () => {
     const manager = new RoomManager();
     const room = manager.createRoom("player-host", "房主");
-    manager.addAi("player-host", room.id);
+    manager.joinRoom("player-guest", "玩家二", room.id);
     manager.addAi("player-host", room.id);
     manager.addAi("player-host", room.id);
     manager.startGame("player-host", room.id);
@@ -55,5 +55,20 @@ describe("RoomManager", () => {
 
     const nextRoom = manager.createRoom("player-host", "新房主");
     expect(nextRoom.id).not.toBe(room.id);
+  });
+
+  it("房主可動態更新電腦吃碰積極度設定", () => {
+    const manager = new RoomManager();
+    const room = manager.createRoom("player-host", "房主");
+
+    manager.updateRoomSettings("player-host", room.id, { aiClaimAggression: "aggressive" });
+
+    const record = (
+      manager as unknown as {
+        rooms: Map<string, { settings: { aiClaimAggression: string } }>;
+      }
+    ).rooms.get(room.id);
+
+    expect(record?.settings.aiClaimAggression).toBe("aggressive");
   });
 });

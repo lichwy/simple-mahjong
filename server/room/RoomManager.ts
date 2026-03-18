@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import type WebSocket from "ws";
 import type {
   ActionOption,
+  RoomSettings,
   LobbySeat,
   PublicGameState,
   RoomSummary,
@@ -23,9 +24,14 @@ interface RoomRecord {
   id: string;
   hostId: string;
   seats: Array<SeatAssignment | null>;
+  settings: RoomSettings;
   match: MatchEngine | null;
   aiTimer: NodeJS.Timeout | null;
 }
+
+const DEFAULT_ROOM_SETTINGS: RoomSettings = {
+  aiClaimAggression: "balanced"
+};
 
 function roomCode(): string {
   return crypto.randomBytes(3).toString("hex").toUpperCase();
@@ -103,6 +109,7 @@ export class RoomManager {
         null,
         null
       ],
+      settings: { ...DEFAULT_ROOM_SETTINGS },
       match: null,
       aiTimer: null
     };
@@ -170,6 +177,21 @@ export class RoomManager {
     return room;
   }
 
+  updateRoomSettings(playerId: string, roomId: string, settings: Partial<RoomSettings>): RoomRecord {
+    const room = this.requireRoom(roomId);
+    const seat = room.seats.find((item) => item?.playerId === playerId);
+    if (!seat || seat.isAi) {
+      throw new Error("只有房間中的真人玩家可以調整遊戲設定。");
+    }
+    room.settings = {
+      ...room.settings,
+      ...settings
+    };
+    room.match?.setRoomSettings(room.settings);
+    this.broadcastRoomState(room);
+    return room;
+  }
+
   startGame(playerId: string, roomId: string): RoomRecord {
     const room = this.requireRoom(roomId);
     if (room.hostId !== playerId) {
@@ -201,6 +223,7 @@ export class RoomManager {
           connected: seat.connected
         }))
     );
+    room.match.setRoomSettings(room.settings);
     this.broadcastRoomState(room);
     this.broadcastGameState(room);
     return room;
@@ -371,7 +394,7 @@ export class RoomManager {
     if (!room.match) {
       return;
     }
-    const acted = await room.match.runAiStep(this.ai);
+    const acted = await room.match.runAiStep(this.ai, room.settings.aiClaimAggression);
     if (acted) {
       this.broadcastRoomState(room);
       this.broadcastGameState(room);
@@ -453,6 +476,7 @@ export class RoomManager {
       hostId: room.hostId,
       tableReady: Boolean(room.match),
       started: Boolean(room.match && room.match.phase !== "waiting"),
+      settings: room.settings,
       seats
     };
   }
