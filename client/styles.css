@@ -545,13 +545,13 @@ button:disabled {
 }
 
 .meld-fixed.west {
-  left: 26px;
-  bottom: 26px;
+  left: 92px;
+  bottom: 144px;
 }
 
 .meld-fixed.east {
-  right: 26px;
-  top: 26px;
+  right: 92px;
+  top: 144px;
 }
 
 .meld-fixed .meld-strip {
@@ -581,8 +581,8 @@ button:disabled {
 
 .south-player-info-fixed {
   position: absolute;
-  bottom: 72px;
-  left: calc(50% - 360px);
+  bottom: 110px;
+  left: calc(50% + 148px);
   z-index: 5;
 }
 
