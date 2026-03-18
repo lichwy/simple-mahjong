@@ -22,6 +22,7 @@ const tableCenterButton = document.querySelector<HTMLElement>("#table-center-but
 const tableOptionsButton = document.querySelector<HTMLButtonElement>("#table-options-button");
 const tableOptionsPanel = document.querySelector<HTMLElement>("#table-options-panel");
 const handBox = document.querySelector<HTMLElement>("#hand");
+const selfAutoPlayBox = document.querySelector<HTMLElement>("#self-auto-play");
 const drawTileBox = document.querySelector<HTMLElement>("#draw-tile");
 const claimHintBox = document.querySelector<HTMLElement>("#claim-hint");
 const readHintBox = document.querySelector<HTMLElement>("#read-hint");
@@ -96,6 +97,9 @@ let centerButtonPressed = false;
 let lastClickedTileIndex = -1;
 let animationReadyTime = Date.now() + 2000;
 let scoreDialogDismissed = false;
+let selfAutoPlayEnabled = false;
+let selfAutoPlayTimer: number | null = null;
+let lastAutoPlayActionKey = "";
 
 function setTableOptionsOpen(open: boolean): void {
   if (!tableOptionsButton || !tableOptionsPanel) {
@@ -222,7 +226,14 @@ function clearCurrentRoomState(message?: string): void {
     roomShareBox.parentElement?.setAttribute("hidden", "");
   }
   roomSummaryBox?.setAttribute("hidden", "");
+  selfAutoPlayEnabled = false;
+  lastAutoPlayActionKey = "";
+  if (selfAutoPlayTimer !== null) {
+    window.clearTimeout(selfAutoPlayTimer);
+    selfAutoPlayTimer = null;
+  }
   handBox!.innerHTML = "";
+  selfAutoPlayBox?.replaceChildren();
   southPlayerInfoBox?.replaceChildren();
   southPlayerOpenBox?.replaceChildren();
   meldFixedSouth?.replaceChildren();
@@ -583,6 +594,16 @@ function claimActionHighlightTiles(action: ActionOption): { handTiles: Map<Tile,
   return { handTiles, pondTiles };
 }
 
+function claimTargetsWrap(action: ActionOption, wrap: HTMLElement): boolean {
+  const seat = Number(wrap.dataset.seat ?? "-1");
+  const tile = wrap.dataset.tile as Tile | undefined;
+  const isLatestDiscard = wrap.dataset.latestDiscard === "true";
+  if (action.fromSeat === undefined || seat !== action.fromSeat || !tile || !isLatestDiscard) {
+    return false;
+  }
+  return tile === action.tile || tile === action.targetTile;
+}
+
 function updateClaimHighlights(claimActions: ActionOption[], activeAction: ActionOption | null): void {
   if (!handBox || !table) {
     return;
@@ -614,20 +635,11 @@ function updateClaimHighlights(claimActions: ActionOption[], activeAction: Actio
     }
   });
 
-  const remainingUnionPond = new Map(unionPondTiles);
-  const remainingActivePond = new Map(activeHighlights.pondTiles);
   table.querySelectorAll<HTMLElement>(".discard-tile-wrap").forEach((wrap) => {
-    const tile = wrap.dataset.tile as Tile | undefined;
-    const related = Boolean(tile && (remainingUnionPond.get(tile) ?? 0) > 0);
-    const active = Boolean(tile && (remainingActivePond.get(tile) ?? 0) > 0);
+    const related = claimActions.some((action) => claimTargetsWrap(action, wrap));
+    const active = Boolean(activeAction && claimTargetsWrap(activeAction, wrap));
     wrap.classList.toggle("claim-related", related);
     wrap.classList.toggle("claim-active", active);
-    if (tile && related) {
-      remainingUnionPond.set(tile, Math.max(0, (remainingUnionPond.get(tile) ?? 0) - 1));
-    }
-    if (tile && active) {
-      remainingActivePond.set(tile, Math.max(0, (remainingActivePond.get(tile) ?? 0) - 1));
-    }
   });
 }
 
@@ -1006,6 +1018,45 @@ function compactRecommendation(state: PublicGameState): string {
   return `建議：${tileToText(state.recommendation.tile)}，${state.recommendation.reason}`;
 }
 
+function autoPlayActionKey(state: PublicGameState, tile: Tile): string {
+  return [
+    state.roomId,
+    state.round.handIndex,
+    state.currentTurnSeat,
+    state.currentDrawSeat ?? "no-draw",
+    tile,
+    state.players[state.currentTurnSeat]?.discards.length ?? 0
+  ].join(":");
+}
+
+function autoPlayClaimActionKey(state: PublicGameState, action: ActionOption): string {
+  return [
+    state.roomId,
+    state.round.handIndex,
+    state.phase,
+    state.latestDiscard?.seat ?? "no-discard",
+    state.latestDiscard?.tile ?? "no-tile",
+    action.type,
+    action.tile ?? "no-action-tile",
+    (action.tiles ?? []).join(",")
+  ].join(":");
+}
+
+function chooseAutoPlayAction(state: PublicGameState): ActionOption | null {
+  const actions = state.legalActions;
+  const priorityOrder: ActionOption["type"][] = ["ron", "tsumo", "kan", "addedKan", "concealedKan", "pon", "chi"];
+  for (const type of priorityOrder) {
+    const match = actions.find((action) => action.type === type);
+    if (match) {
+      return match;
+    }
+  }
+  if (state.phase === "awaitingDiscard" && state.recommendation?.tile) {
+    return actions.find((action) => action.type === "discard" && action.tile === state.recommendation?.tile) ?? null;
+  }
+  return null;
+}
+
 function renderTileFace(tile: Tile, className = ""): string {
   return `<span class="tile-face ${className}" aria-label="${tileToText(tile)}" title="${tileToText(tile)}">${renderTileGraphic(tile)}</span>`;
 }
@@ -1183,7 +1234,7 @@ function renderDiscardTiles(
         index === discards.length - 1 &&
         latestDiscard.tile === discard.tile &&
         !discard.called;
-      return `<span class="discard-tile-wrap${isLatest ? " latest-discard-tile" : ""}" data-tile="${discard.tile}">${renderTileFace(
+      return `<span class="discard-tile-wrap${isLatest ? " latest-discard-tile" : ""}" data-tile="${discard.tile}" data-seat="${seat}" data-latest-discard="${isLatest ? "true" : "false"}">${renderTileFace(
         discard.tile,
         `tiny ${discard.riichi ? "riichi-mark" : ""} ${discard.called ? "called-mark" : ""} ${isLatest ? "latest-discard" : ""}`.trim()
       )}</span>`;
@@ -1730,6 +1781,7 @@ function renderGame(): void {
 
   const self = state.players.find((player) => player.seat === state.viewerSeat);
   handBox.innerHTML = "";
+  selfAutoPlayBox?.replaceChildren();
   if (southPlayerInfoBox) {
     southPlayerInfoBox.innerHTML = self ? renderSeatInfoPanel(self, state) : "";
   }
@@ -1758,6 +1810,26 @@ function renderGame(): void {
     const sortedTiles = sortTiles([...self.hand]);
     const drawnTile = state.viewerDrawTile;
     const suggestedTile = state.recommendation?.tile ?? null;
+    if (selfAutoPlayBox) {
+      const autoPlayButton = document.createElement("button");
+      const autoPlayLabel = selfAutoPlayEnabled ? "取消托管" : "托管";
+      autoPlayButton.className = `table-options-button self-auto-play-btn ${selfAutoPlayEnabled ? "self-auto-play-active" : "self-auto-play-inactive"}`;
+      autoPlayButton.textContent = autoPlayLabel;
+      autoPlayButton.title = autoPlayLabel;
+      autoPlayButton.dataset.glyphLength = String(autoPlayLabel.length);
+      autoPlayButton.addEventListener("click", () => {
+        selfAutoPlayEnabled = !selfAutoPlayEnabled;
+        if (!selfAutoPlayEnabled) {
+          lastAutoPlayActionKey = "";
+          if (selfAutoPlayTimer !== null) {
+            window.clearTimeout(selfAutoPlayTimer);
+            selfAutoPlayTimer = null;
+          }
+        }
+        renderGame();
+      });
+      selfAutoPlayBox.append(autoPlayButton);
+    }
     if (drawnTile) {
       drawTileBox.innerHTML = `
         <span class="draw-status-line">
@@ -1797,6 +1869,31 @@ function renderGame(): void {
         });
       }
       handBox.append(tileButton);
+    }
+
+    const autoPlayAction =
+      selfAutoPlayEnabled &&
+      (
+        (state.phase === "awaitingDiscard" && state.currentTurnSeat === self.seat) ||
+        state.phase === "awaitingClaims"
+      )
+        ? chooseAutoPlayAction(state)
+        : null;
+    if (autoPlayAction) {
+      const actionKey =
+        autoPlayAction.type === "discard" && autoPlayAction.tile
+          ? autoPlayActionKey(state, autoPlayAction.tile)
+          : autoPlayClaimActionKey(state, autoPlayAction);
+      if (actionKey !== lastAutoPlayActionKey && selfAutoPlayTimer === null) {
+        selfAutoPlayTimer = window.setTimeout(() => {
+          selfAutoPlayTimer = null;
+          lastAutoPlayActionKey = actionKey;
+          send({ type: "action", roomId: state.roomId, action: autoPlayAction });
+        }, 260);
+      }
+    } else if (selfAutoPlayTimer !== null) {
+      window.clearTimeout(selfAutoPlayTimer);
+      selfAutoPlayTimer = null;
     }
   }
 
