@@ -849,7 +849,6 @@ function insertHandGapSpacer(position: TablePosition, _state: PublicGameState): 
   } else if (position === "west" || position === "east") {
     spacer.style.width = "28px";
     spacer.style.height = "28px";
-    spacer.style.margin = "-5px 0";
     const row = table.querySelector(`.seat-zone.${position} .tile-back-row`);
     if (row) {
       const insertAt = idx >= 0 && idx <= row.children.length ? idx : Math.floor(row.children.length / 2);
