@@ -80,6 +80,7 @@
             <span class="table-sakura s27">🌸</span>
             <span class="table-sakura s28">🌸</span>
           </div>
+          <button id="table-hint-button" class="table-hint-button tilt-btn" type="button">提示</button>
           <button id="table-options-button" class="table-options-button tilt-btn" type="button" aria-expanded="false" aria-controls="table-options-panel">
             <span class="table-options-button-label">選項</span>
           </button>
@@ -194,6 +195,27 @@
           <button id="leave-dialog-confirm" class="leave-dialog-confirm-btn tilt-btn" type="button">離桌</button>
         </div>
       </section>
+    </div>
+
+    <div id="hint-panel" class="hint-panel" hidden>
+      <div class="hint-panel-header" id="hint-panel-drag">
+        <span class="hint-panel-title">💡 局面提示</span>
+        <button id="hint-panel-close" class="hint-panel-close-btn" type="button">&times;</button>
+      </div>
+      <div class="hint-panel-body">
+        <div class="hint-section">
+          <div class="hint-label">推薦出牌</div>
+          <div class="hint-value" id="hint-rec"></div>
+        </div>
+        <div class="hint-section">
+          <div class="hint-label">對手牌況</div>
+          <div class="hint-value" id="hint-opp"></div>
+        </div>
+        <div class="hint-section">
+          <div class="hint-label">AI 思考</div>
+          <div class="hint-value" id="hint-ai-text"></div>
+        </div>
+      </div>
     </div>
 
     <script type="module" src="/app.js"></script>

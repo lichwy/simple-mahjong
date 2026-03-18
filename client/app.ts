@@ -21,6 +21,13 @@ const table = document.querySelector<HTMLElement>("#table");
 const tableCenterButton = document.querySelector<HTMLElement>("#table-center-button");
 const tableOptionsButton = document.querySelector<HTMLButtonElement>("#table-options-button");
 const tableOptionsPanel = document.querySelector<HTMLElement>("#table-options-panel");
+const tableHintButton = document.querySelector<HTMLButtonElement>("#table-hint-button");
+const hintPanel = document.querySelector<HTMLElement>("#hint-panel");
+const hintPanelClose = document.querySelector<HTMLButtonElement>("#hint-panel-close");
+const hintPanelDrag = document.querySelector<HTMLElement>("#hint-panel-drag");
+const hintRec = document.querySelector<HTMLElement>("#hint-rec");
+const hintOpp = document.querySelector<HTMLElement>("#hint-opp");
+const hintAiText = document.querySelector<HTMLElement>("#hint-ai-text");
 const handBox = document.querySelector<HTMLElement>("#hand");
 const selfAutoPlayBox = document.querySelector<HTMLElement>("#self-auto-play");
 const drawTileBox = document.querySelector<HTMLElement>("#draw-tile");
@@ -88,6 +95,7 @@ let catPawCleanupTimer: number | null = null;
 let catPawRevealTimer: number | null = null;
 let catPawAnimationEndTime = 0;
 let dealIntroTimer: number | null = null;
+let avatarClusterActive = false;
 let lastGamePhase: string | null = null;
 let lastClaimSeq = 0;
 let claimFlashTimer: number | null = null;
@@ -95,6 +103,7 @@ const CAT_PAW_SIZE = 360;
 const CAT_PAW_ANIMATION_MS = 733;
 const CAT_PAW_REVEAL_MS = 520;
 let centerButtonPressed = false;
+let centerButtonActionSent = false;
 let lastClickedTileIndex = -1;
 let animationReadyTime = Date.now() + 2000;
 let scoreDialogDismissed = false;
@@ -108,6 +117,95 @@ function setTableOptionsOpen(open: boolean): void {
   }
   tableOptionsButton.setAttribute("aria-expanded", open ? "true" : "false");
   tableOptionsPanel.hidden = !open;
+}
+
+function initHintPanel(): void {
+  if (!hintPanel || !hintPanelDrag || !hintPanelClose || !tableHintButton) {
+    return;
+  }
+
+  tableHintButton.addEventListener("click", () => {
+    hintPanel.hidden = !hintPanel.hidden;
+    if (!hintPanel.hidden) {
+      updateHintPanel();
+    }
+  });
+
+  hintPanelClose.addEventListener("click", () => {
+    hintPanel.hidden = true;
+  });
+
+  let dragging = false;
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let panelStartLeft = 0;
+  let panelStartTop = 0;
+
+  hintPanelDrag.addEventListener("mousedown", (e: MouseEvent) => {
+    if ((e.target as HTMLElement).closest("button")) return;
+    dragging = true;
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+    const panelRect = hintPanel.getBoundingClientRect();
+    panelStartLeft = panelRect.left;
+    panelStartTop = panelRect.top;
+    hintPanel.style.right = "auto";
+    hintPanel.style.left = `${panelStartLeft}px`;
+    hintPanel.style.top = `${panelStartTop}px`;
+    hintPanelDrag.style.cursor = "grabbing";
+    e.preventDefault();
+  });
+
+  document.addEventListener("mousemove", (e: MouseEvent) => {
+    if (!dragging) return;
+    const dx = e.clientX - dragStartX;
+    const dy = e.clientY - dragStartY;
+    hintPanel.style.left = `${panelStartLeft + dx}px`;
+    hintPanel.style.top = `${panelStartTop + dy}px`;
+  });
+
+  document.addEventListener("mouseup", () => {
+    if (!dragging) return;
+    dragging = false;
+    hintPanelDrag.style.cursor = "grab";
+  });
+}
+
+function updateHintPanel(): void {
+  if (!hintPanel || hintPanel.hidden || !gameState) {
+    return;
+  }
+  if (hintRec) {
+    if (gameState.recommendation?.tile) {
+      const tile = gameState.recommendation.tile;
+      hintRec.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <div>${renderTileFace(tile, "small")}</div>
+          <div style="font-size:11px;opacity:0.88;line-height:1.5;">${gameState.recommendation.reason}</div>
+        </div>`;
+    } else {
+      hintRec.textContent = "暫無建議";
+    }
+  }
+  if (hintOpp) {
+    const viewerSeat = gameState.viewerSeat;
+    const opponents = gameState.players.filter((p) => p.seat !== viewerSeat);
+    hintOpp.textContent = opponents.length === 0
+      ? "—"
+      : opponents.map((p) => `${p.name}：${estimateMissingSuit(p)}，${estimateLikelyWait(p)}`).join("\n");
+  }
+  if (hintAiText) {
+    if (!gameState.aiInsights || gameState.aiInsights.length === 0) {
+      hintAiText.textContent = "尚無 AI 摘要";
+    } else {
+      hintAiText.textContent = gameState.aiInsights
+        .map((insight) => {
+          const player = gameState!.players.find((p) => p.seat === insight.seat);
+          return `${player?.name ?? `AI${insight.seat + 1}`}：${insight.summary}`;
+        })
+        .join("\n");
+    }
+  }
 }
 
 function claimAggressionLabel(value: AiClaimAggression): string {
@@ -246,6 +344,12 @@ function clearCurrentRoomState(message?: string): void {
   claimHintBox!.textContent = "目前沒有可碰牌提示。";
   actionsBox!.innerHTML = "";
   tableActionsFixedBox?.replaceChildren();
+  avatarClusterActive = false;
+  for (const el of [southPlayerInfoBox, playerInfoNorth, playerInfoWest, playerInfoEast]) {
+    if (!el) continue;
+    el.style.removeProperty("translate");
+    el.style.removeProperty("transition");
+  }
   ensureTableSkeleton();
   centerSummary!.innerHTML = buildIdleCenterSummary();
   logsBox!.innerHTML = "";
@@ -350,6 +454,11 @@ function handleCenterButtonRelease(): void {
   if (!action) {
     return;
   }
+  if (centerButtonActionSent) {
+    return;
+  }
+  centerButtonActionSent = true;
+  window.setTimeout(() => { centerButtonActionSent = false; }, 400);
   scoreDialogDismissed = true;
   hideScoreDialog();
   send(action);
@@ -799,9 +908,10 @@ function playCatPawForLatestDiscard(state: PublicGameState): boolean {
   catPawAnimation.style.setProperty("--paw-exit-x", `${exitX}px`);
   catPawAnimation.style.setProperty("--paw-exit-y", `${exitY}px`);
   catPawAnimation.classList.add(`from-${fromPosition}`);
-  void catPawAnimation.offsetWidth;
-  catPawAnimation.classList.add("play");
   catPawAnimationEndTime = Date.now() + CAT_PAW_ANIMATION_MS;
+  window.requestAnimationFrame(() => {
+    catPawAnimation.classList.add("play");
+  });
   catPawRevealTimer = window.setTimeout(() => {
     target.classList.remove("discard-under-paw");
     target.classList.add("discard-revealed");
@@ -1967,6 +2077,7 @@ function renderGame(): void {
   }
   handleResultPresentation(state);
   if (shouldPlayDealIntro && table) {
+    releaseAvatarsFromCenter();
     table.classList.remove("deal-intro");
     void table.offsetWidth;
     table.classList.add("deal-intro");
@@ -1978,7 +2089,15 @@ function renderGame(): void {
       dealIntroTimer = null;
     }, 1500);
   }
+
+  if (state.phase === "waiting" && !avatarClusterActive) {
+    window.requestAnimationFrame(() => {
+      clusterAvatarsAroundCenter();
+    });
+  }
+
   lastGamePhase = state.phase;
+  updateHintPanel();
 }
 
 function describeResult(state: PublicGameState): string {
@@ -2124,6 +2243,10 @@ tableCenterButton?.addEventListener("pointercancel", () => {
   tableCenterButton.classList.remove("pressing");
 });
 
+tableCenterButton?.addEventListener("click", () => {
+  handleCenterButtonRelease();
+});
+
 tableCenterButton?.addEventListener("keydown", (event) => {
   if (event.key !== "Enter" && event.key !== " ") {
     return;
@@ -2148,6 +2271,7 @@ scoreDialogCloseButton?.addEventListener("click", () => {
 
 scoreDialogBackdrop?.addEventListener("click", (event) => {
   if (event.target === scoreDialogBackdrop) {
+    scoreDialogDismissed = true;
     hideScoreDialog();
   }
 });
@@ -2174,6 +2298,82 @@ updateViewMode();
 renderRoom();
 connect();
 initTiltEffect();
+initHintPanel();
+
+function clusterAvatarsAroundCenter(): void {
+  if (!table || avatarClusterActive) {
+    return;
+  }
+  const tableRect = table.getBoundingClientRect();
+  if (!tableRect.width) {
+    return;
+  }
+  const panelHalf = 92;
+  const gap = 14;
+  const tCX = tableRect.width / 2;
+  const tCY = tableRect.height / 2;
+
+  const defs: Array<{
+    el: HTMLElement | null;
+    ax: "center" | "left" | "right";
+    ay: "above" | "below" | "middle";
+  }> = [
+    { el: southPlayerInfoBox, ax: "center", ay: "below" },
+    { el: playerInfoNorth, ax: "center", ay: "above" },
+    { el: playerInfoWest, ax: "left", ay: "middle" },
+    { el: playerInfoEast, ax: "right", ay: "middle" }
+  ];
+
+  for (const { el, ax, ay } of defs) {
+    if (!el) {
+      continue;
+    }
+    el.style.removeProperty("translate");
+    el.style.setProperty("transition", "none");
+    void el.offsetWidth;
+
+    const rect = el.getBoundingClientRect();
+    const eCX = rect.left - tableRect.left + rect.width / 2;
+    const eCY = rect.top - tableRect.top + rect.height / 2;
+
+    let targetCX = tCX;
+    let targetCY = tCY;
+    if (ax === "left") {
+      targetCX = tCX - panelHalf - gap - rect.width / 2;
+    } else if (ax === "right") {
+      targetCX = tCX + panelHalf + gap + rect.width / 2;
+    }
+    if (ay === "above") {
+      targetCY = tCY - panelHalf - gap - rect.height / 2;
+    } else if (ay === "below") {
+      targetCY = tCY + panelHalf + gap + rect.height / 2;
+    }
+
+    const dx = (targetCX - eCX).toFixed(1);
+    const dy = (targetCY - eCY).toFixed(1);
+    el.style.setProperty("translate", `${dx}px ${dy}px`);
+  }
+  avatarClusterActive = true;
+}
+
+function releaseAvatarsFromCenter(): void {
+  if (!avatarClusterActive) {
+    return;
+  }
+  const RELEASE_DURATION = 700;
+  for (const el of [southPlayerInfoBox, playerInfoNorth, playerInfoWest, playerInfoEast]) {
+    if (!el) {
+      continue;
+    }
+    el.style.setProperty("transition", `translate ${RELEASE_DURATION}ms cubic-bezier(0.34, 1.56, 0.64, 1)`);
+    void el.offsetWidth;
+    el.style.removeProperty("translate");
+    window.setTimeout(() => {
+      el.style.removeProperty("transition");
+    }, RELEASE_DURATION + 100);
+  }
+  avatarClusterActive = false;
+}
 
 function initTiltEffect(): void {
   const MAX_TILT = 18;
@@ -2186,16 +2386,16 @@ function initTiltEffect(): void {
     const rect = btn.getBoundingClientRect();
     const dx = Math.max(-1, Math.min(1, (e.clientX - rect.left - rect.width / 2) / (rect.width / 2)));
     const dy = Math.max(-1, Math.min(1, (e.clientY - rect.top - rect.height / 2) / (rect.height / 2)));
-    btn.style.setProperty("--tilt-x", `${(-dy * MAX_TILT).toFixed(2)}deg`);
-    btn.style.setProperty("--tilt-y", `${(dx * MAX_TILT).toFixed(2)}deg`);
+    const rx = (-dy * MAX_TILT).toFixed(2);
+    const ry = (dx * MAX_TILT).toFixed(2);
+    btn.style.transform = `perspective(280px) rotateX(${rx}deg) rotateY(${ry}deg)`;
   });
 
   document.addEventListener("mouseout", (e: MouseEvent) => {
     const btn = (e.target as HTMLElement).closest<HTMLElement>(".tilt-btn");
     const related = e.relatedTarget as HTMLElement | null;
     if (btn && !btn.contains(related)) {
-      btn.style.setProperty("--tilt-x", "0deg");
-      btn.style.setProperty("--tilt-y", "0deg");
+      btn.style.removeProperty("transform");
     }
   });
 }

@@ -7,13 +7,15 @@
   --center-tech-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", "Arial Narrow", sans-serif;
 }
 
-/* ── Tilt effect variables (updated per element via JS) ── */
+/* ── Tilt effect: applied via inline style on hover only (no default transform) ── */
 .tilt-btn {
-  --tilt-x: 0deg;
-  --tilt-y: 0deg;
-  --tilt: perspective(280px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
-  transform: var(--tilt);
-  will-change: transform;
+  transition: translate 100ms ease, scale 100ms ease, box-shadow 100ms ease, filter 100ms ease;
+}
+
+.tilt-btn:active {
+  translate: 0 3px;
+  scale: 0.97;
+  filter: brightness(0.94);
 }
 
 [hidden] {
@@ -64,7 +66,10 @@ body.in-match {
   min-height: 100vh;
   padding: 0;
   gap: 0;
-  display: block;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .layout.in-match .panel-setup,
@@ -75,13 +80,15 @@ body.in-match {
 
 .layout.in-match .panel-table {
   display: block;
-  min-height: 100vh;
   border-radius: 0;
   border: 0;
   box-shadow: none;
-  padding: 10px 16px 18px;
-  background:
-    linear-gradient(90deg, rgba(81, 37, 22, 0.96), rgba(36, 17, 10, 0.95) 8%, rgba(8, 25, 22, 0.96) 18%, rgba(8, 25, 22, 0.96) 82%, rgba(36, 17, 10, 0.95) 92%, rgba(81, 37, 22, 0.96));
+  padding: 0;
+  background: none;
+}
+
+.layout.in-match .control-strip {
+  display: none;
 }
 
 .panel {
@@ -292,14 +299,7 @@ button:disabled {
   overflow: hidden;
 }
 
-.mahjong-table.deal-intro .north-player-open,
-.mahjong-table.deal-intro .north-player-lower,
-.mahjong-table.deal-intro .south-player-open,
-.mahjong-table.deal-intro .south-player-lower,
-.mahjong-table.deal-intro .seat-zone.west,
-.mahjong-table.deal-intro .seat-zone.east {
-  opacity: 0;
-}
+/* deal-intro: slide-in only, no opacity hide to prevent flash */
 
 .mahjong-table.deal-intro .north-player-open {
   animation: seatDealFromTop 420ms ease forwards 80ms;
@@ -318,17 +318,18 @@ button:disabled {
 }
 
 .mahjong-table.deal-intro .south-player-open {
-  animation: seatDealFromBottom 420ms ease forwards 820ms;
+  animation: seatDealFromBottom 420ms ease forwards 150ms;
 }
 
 .mahjong-table.deal-intro .south-player-lower {
-  animation: seatDealFromBottom 420ms ease forwards 1000ms;
+  animation: seatDealFromBottom 420ms ease forwards 150ms;
 }
 
 .layout.in-match .mahjong-table {
-  width: 100%;
-  height: calc(100vh - 40px);
-  max-width: calc((100vh - 40px) * 5 / 3);
+  width: 1440px;
+  height: 864px;
+  max-width: none;
+  max-height: none;
 }
 
 .table-exit-button {
@@ -344,6 +345,115 @@ button:disabled {
   line-height: 1;
   transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease, background 140ms ease;
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
+}
+
+.table-hint-button {
+  position: absolute;
+  top: 28px;
+  right: 242px;
+  z-index: 9;
+  background: #5c1e8a;
+  color: #e8d8ff;
+  font-family: var(--jp-display-font);
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
+  transition: translate 100ms ease, scale 100ms ease, box-shadow 100ms ease, filter 100ms ease;
+}
+
+.table-hint-button:hover {
+  background: #6e25a8;
+}
+
+.hint-panel {
+  position: fixed;
+  z-index: 9999;
+  top: 80px;
+  right: 40px;
+  width: 310px;
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(190, 130, 80, 0.12), rgba(0,0,0,0) 60%),
+    linear-gradient(160deg, rgba(122, 76, 38, 0.96), rgba(72, 42, 18, 0.97));
+  border: 4px solid #6a4326;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 220, 170, 0.14),
+    inset 0 0 0 3px rgba(88, 50, 22, 0.9),
+    0 12px 36px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  color: #f0dfc0;
+  user-select: none;
+}
+
+.hint-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px 9px;
+  cursor: grab;
+  border-bottom: 1px solid rgba(255, 196, 120, 0.18);
+  background: rgba(0, 0, 0, 0.22);
+  border-radius: 8px 8px 0 0;
+}
+
+.hint-panel-header:active {
+  cursor: grabbing;
+}
+
+.hint-panel-title {
+  font-family: var(--jp-display-font);
+  font-size: 16px;
+  font-weight: 700;
+  color: #f7e0b0;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
+.hint-panel-close-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(255,255,255,0.12);
+  color: #f0dfc0;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 120ms ease;
+}
+
+.hint-panel-close-btn:hover {
+  background: rgba(255,255,255,0.24);
+}
+
+.hint-panel-body {
+  padding: 10px 14px 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.hint-section {
+  display: grid;
+  gap: 4px;
+}
+
+.hint-label {
+  font-family: var(--jp-display-font);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: rgba(240, 196, 130, 0.88);
+  text-transform: uppercase;
+}
+
+.hint-value {
+  font-size: 12px;
+  color: #eddcb8;
+  line-height: 1.55;
 }
 
 .table-options-button {
@@ -366,9 +476,7 @@ button:disabled {
 }
 
 .table-options-button:active {
-  transform: var(--tilt, perspective(280px)) translateY(3px) scale(0.97);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.22);
-  filter: brightness(0.96);
 }
 
 .table-options-button-label {
@@ -408,9 +516,7 @@ button:disabled {
 }
 
 .table-exit-button:active {
-  transform: var(--tilt, perspective(280px)) translateY(3px) scale(0.97);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.22);
-  filter: brightness(0.96);
 }
 
 .table-exit-button:active .table-exit-button-label {
@@ -420,44 +526,36 @@ button:disabled {
 
 @keyframes seatDealFromTop {
   0% {
-    opacity: 0;
-    transform: translateY(-26px) scale(0.98);
+    transform: translateY(-20px) scale(0.98);
   }
   100% {
-    opacity: 1;
     transform: translateY(0) scale(1);
   }
 }
 
 @keyframes seatDealFromBottom {
   0% {
-    opacity: 0;
-    transform: translateY(26px) scale(0.98);
+    transform: translateY(20px) scale(0.98);
   }
   100% {
-    opacity: 1;
     transform: translateY(0) scale(1);
   }
 }
 
 @keyframes seatDealFromLeft {
   0% {
-    opacity: 0;
-    transform: translateX(-24px) scale(0.98);
+    transform: translateX(-18px) scale(0.98);
   }
   100% {
-    opacity: 1;
     transform: translateX(0) scale(1);
   }
 }
 
 @keyframes seatDealFromRight {
   0% {
-    opacity: 0;
-    transform: translateX(24px) scale(0.98);
+    transform: translateX(18px) scale(0.98);
   }
   100% {
-    opacity: 1;
     transform: translateX(0) scale(1);
   }
 }
@@ -864,18 +962,17 @@ button:disabled {
 }
 
 .seat-card-name {
-  transform: translateY(0);
-  transition: transform 140ms ease, filter 140ms ease;
+  transition: filter 140ms ease;
 }
 
 .seat-info-card:active .seat-avatar-wrap {
-  transform: translateY(3px) scale(0.96);
+  translate: 0 3px;
+  scale: 0.96;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22);
   filter: brightness(0.97);
 }
 
 .seat-info-card:active .seat-card-name {
-  transform: translateY(2px);
   filter: brightness(0.96);
 }
 
@@ -945,7 +1042,6 @@ button:disabled {
   top: 106px;
   left: calc(50% + 250px);
   right: auto;
-  transform: none;
 }
 
 .player-info-fixed.west {
@@ -2653,9 +2749,7 @@ button:disabled {
 #leave-dialog-backdrop .score-dialog-close-btn:active,
 .leave-dialog-cancel-btn:active,
 .leave-dialog-confirm-btn:active {
-  transform: var(--tilt, perspective(280px)) translateY(3px) scale(0.97);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.22);
-  filter: brightness(0.96);
 }
 
 .score-dialog-header {
@@ -2899,7 +2993,7 @@ button:disabled {
 
 .action-word-btn:hover {
   background: linear-gradient(180deg, #ffffff 0%, #fbf6eb 64%, #f4ebda 100%);
-  transform: var(--tilt, perspective(280px)) translateY(-3px);
+  transform: translateY(-3px);
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.96),
     inset 0 -16px 20px rgba(214, 197, 169, 0.14),
@@ -3120,157 +3214,4 @@ button:disabled {
   margin-bottom: 12px;
 }
 
-@media (max-width: 1100px) {
-  .mahjong-table {
-    min-height: 900px;
-  }
 
-  .table-center {
-    inset: 220px 230px 220px 230px;
-  }
-
-  .seat-zone.west,
-  .seat-zone.east {
-    top: 112px;
-    bottom: 112px;
-    width: 112px;
-  }
-
-  .pond-zone.west {
-    left: 174px;
-    width: 82px;
-  }
-
-  .pond-zone.east {
-    left: calc(50% + 93px);
-    right: auto;
-    width: auto;
-  }
-
-  .pond-zone.north {
-    width: min(40%, 300px);
-  }
-
-  .pond-zone.south {
-    width: min(46%, 340px);
-  }
-
-  .tile-face,
-  .tile-back,
-  .tile-button,
-  .tile-chip {
-    min-width: 36px;
-    min-height: 52px;
-    font-size: 12px;
-  }
-}
-
-@media (max-width: 780px) {
-  .layout.in-match .panel-table {
-    padding: 10px 10px 16px;
-  }
-
-  .mahjong-table {
-    min-height: 980px;
-  }
-
-  .seat-zone.north,
-  .seat-zone.south {
-    width: calc(100% - 24px);
-  }
-
-  .south-player-bar {
-    left: 12px;
-    right: 12px;
-    bottom: 16px;
-    grid-template-columns: 1fr;
-    align-items: stretch;
-  }
-
-  .south-player-lower,
-  .north-player-lower {
-    grid-template-columns: 1fr;
-  }
-
-  .north-player-bar {
-    grid-template-columns: 1fr;
-  }
-
-  .seat-zone.west,
-  .seat-zone.east {
-    top: 156px;
-    bottom: 196px;
-    width: 84px;
-  }
-
-  .pond-zone.north {
-    top: 188px;
-    width: min(54%, 250px);
-  }
-
-  .pond-zone.south {
-    bottom: 214px;
-    width: min(58%, 270px);
-  }
-
-  .pond-zone.west {
-    left: 116px;
-    width: 74px;
-  }
-
-  .pond-zone.east {
-    left: calc(50% + 93px);
-    right: auto;
-    width: auto;
-  }
-
-  .table-center {
-    inset: 260px 132px 250px 132px;
-  }
-
-  .table-center::before {
-    width: 140px;
-    height: 140px;
-  }
-
-  .center-summary {
-    width: 108px;
-    min-height: 108px;
-  }
-
-  .center-summary-value {
-    font-size: 12px;
-  }
-
-  .discard-tile-wrap {
-    width: 24px;
-    height: 52px;
-    flex-basis: 24px;
-  }
-
-  .score-row {
-    grid-template-columns: 1fr;
-  }
-
-  .result-overlay-card {
-    min-height: min(56vh, 420px);
-    padding: 28px 20px;
-  }
-
-  .info-strip {
-    grid-template-columns: 1fr;
-  }
-
-  .seat-inline-panels {
-    grid-template-columns: 1fr;
-  }
-
-  .draw-status-line {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .info-actions {
-    justify-content: stretch;
-  }
-}
