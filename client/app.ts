@@ -1043,7 +1043,7 @@ function renderTileGraphic(tile: Tile): string {
   }
   if (suit === "p") {
     return `
-      <span class="tile-graphic suit-pin">
+      <span class="tile-graphic suit-pin pin-rank-${rank}">
         <span class="pip-grid">
           ${pipPattern(rank)
             .map(
