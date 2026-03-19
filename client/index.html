@@ -10,6 +10,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Yuji+Boku&display=swap" rel="stylesheet" />
   </head>
   <body>
+    <div class="lobby-cat-wrap" id="lobby-cat-wrap" aria-hidden="true">
+      <img class="lobby-cat" src="/lobby-maneki-neko.png" alt="" />
+    </div>
     <main class="layout" id="app-layout">
       <section class="panel panel-setup">
         <h1>日式麻將 LAN 對戰</h1>
@@ -48,6 +51,7 @@
       </section>
 
       <section class="panel panel-table">
+        <div id="wood-frame" class="wood-frame">
         <div id="table" class="mahjong-table">
           <div class="table-engraving-overlay" aria-hidden="true"></div>
           <div class="table-petal-overlay" aria-hidden="true">
@@ -132,6 +136,7 @@
             </div>
           </div>
         </div>
+        </div><!-- /#wood-frame -->
         <div class="control-strip">
           <div class="info-strip">
             <div id="draw-tile" class="draw-tile-box">尚未摸牌</div>

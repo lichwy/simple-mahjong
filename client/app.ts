@@ -357,6 +357,7 @@ function clearCurrentRoomState(message?: string): void {
     el.style.removeProperty("translate");
     el.style.removeProperty("transition");
   }
+  if (hintPanel) hintPanel.hidden = true;
   ensureTableSkeleton();
   centerSummary!.innerHTML = buildIdleCenterSummary();
   logsBox!.innerHTML = "";
@@ -858,10 +859,11 @@ function playCatPawForLatestDiscard(state: PublicGameState): boolean {
   const tableRect = table.getBoundingClientRect();
   const targetRect = target.getBoundingClientRect();
   const pawSize = CAT_PAW_SIZE;
-  const targetCenterX = targetRect.left - tableRect.left + targetRect.width / 2;
-  const targetCenterY = targetRect.top - tableRect.top + targetRect.height / 2;
+  const zoom = parseFloat(getComputedStyle(table).zoom) || 1;
+  const targetCenterX = (targetRect.left - tableRect.left + targetRect.width / 2) / zoom;
+  const targetCenterY = (targetRect.top - tableRect.top + targetRect.height / 2) / zoom;
   const targetPos = pawTopLeftForCenter(targetCenterX, targetCenterY, fromPosition, pawSize);
-  const coverShift = pawCoverShift(fromPosition, targetRect.width, targetRect.height);
+  const coverShift = pawCoverShift(fromPosition, targetRect.width / zoom, targetRect.height / zoom);
   const targetX = targetPos.x + coverShift.x;
   const targetY = targetPos.y + coverShift.y;
 
@@ -878,8 +880,8 @@ function playCatPawForLatestDiscard(state: PublicGameState): boolean {
       : table.querySelector(".seat-zone.east .tile-back-row");
     if (handAreaEl) {
       const handRect = handAreaEl.getBoundingClientRect();
-      const handCenterX = handRect.left - tableRect.left + handRect.width / 2;
-      const handCenterY = handRect.top - tableRect.top + handRect.height / 2;
+      const handCenterX = (handRect.left - tableRect.left + handRect.width / 2) / zoom;
+      const handCenterY = (handRect.top - tableRect.top + handRect.height / 2) / zoom;
       const handPos = pawTopLeftForCenter(handCenterX, handCenterY, fromPosition, pawSize);
       startX = handPos.x;
       startY = handPos.y;
@@ -1794,6 +1796,7 @@ function captureHandTilePosition(state: PublicGameState): { x: number; y: number
   }
   const tableRect = table.getBoundingClientRect();
   const pawSize = CAT_PAW_SIZE;
+  const zoom = parseFloat(getComputedStyle(table).zoom) || 1;
   const fromPosition = relativePosition(state.viewerSeat, state.latestDiscard.seat);
 
   if (fromPosition === "south") {
@@ -1806,8 +1809,8 @@ function captureHandTilePosition(state: PublicGameState): { x: number; y: number
       const picked = tileButtons[pickIdx];
       const rect = picked.getBoundingClientRect();
       lastClickedTileIndex = -1;
-      const tileCenterX = rect.left - tableRect.left + rect.width / 2;
-      const tileCenterY = rect.top - tableRect.top + rect.height / 2;
+      const tileCenterX = (rect.left - tableRect.left + rect.width / 2) / zoom;
+      const tileCenterY = (rect.top - tableRect.top + rect.height / 2) / zoom;
       const topLeft = pawTopLeftForCenter(tileCenterX, tileCenterY, fromPosition, pawSize);
       return {
         x: topLeft.x,
@@ -1829,8 +1832,8 @@ function captureHandTilePosition(state: PublicGameState): { x: number; y: number
       const pickIndex = Math.min(tiles.length - 1, Math.floor(Math.random() * Math.min(tiles.length, 5)) + Math.floor(tiles.length / 3));
       const picked = tiles[pickIndex];
       const rect = picked.getBoundingClientRect();
-      const tileCenterX = rect.left - tableRect.left + rect.width / 2;
-      const tileCenterY = rect.top - tableRect.top + rect.height / 2;
+      const tileCenterX = (rect.left - tableRect.left + rect.width / 2) / zoom;
+      const tileCenterY = (rect.top - tableRect.top + rect.height / 2) / zoom;
       const topLeft = pawTopLeftForCenter(tileCenterX, tileCenterY, fromPosition, pawSize);
       return {
         x: topLeft.x,

@@ -77,6 +77,11 @@ try {
   // Optional cosmetic asset; build should still succeed without it.
 }
 try {
+  await copyFile(path.join(root, "client", "lobby-maneki-neko.png"), path.join(publicDir, "lobby-maneki-neko.png"));
+} catch {
+  // Optional cosmetic asset; build should still succeed without it.
+}
+try {
   await copyFile(path.join(root, "client", "avatar-default.png"), path.join(publicDir, "avatar-default.png"));
 } catch {
   // Optional cosmetic asset; build should still succeed without it.
